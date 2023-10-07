@@ -31,7 +31,7 @@ public class DriveConstants {
      * If using the built-in motor velocity PID, update MOTOR_VELO_PID with the tuned coefficients
      * from DriveVelocityPIDTuner.
      */
-    public static final boolean RUN_USING_ENCODER = true;
+    public static final boolean RUN_USING_ENCODER = false;
 //    public static PIDFCoefficients MOTOR_VELO_PID = new PIDFCoefficients(0.9, 0, 0.2,
 //            12.4); // getMotorVelocityF(MAX_RPM / 60 * TICKS_PER_REV));
 
@@ -47,7 +47,7 @@ public class DriveConstants {
      * convenience. Make sure to exclude any gear ratio included in MOTOR_CONFIG from GEAR_RATIO.
      */
     public static double WHEEL_RADIUS = 1.4763; // in
-    public static double GEAR_RATIO = 1.096; // 44; // 28571429;  // 1.06; // output (wheel) speed / input (motor) speed
+    public static double GEAR_RATIO = 1.284; // 1.096; // 44; // 28571429;  // 1.06; // output (wheel) speed / input (motor) speed
     public static double TRACK_WIDTH = 12.48; // 11.64; // 12.6 is actual; 12.24 after tuning to get effective // in
 
     /*
@@ -56,8 +56,8 @@ public class DriveConstants {
      * motor encoders or have elected not to use them for velocity control, these values should be
      * empirically tuned.
      */
-    public static double kV = 1.0 / rpmToVelocity(MAX_RPM);
-    public static double kA = 0;
+    public static double kV = 0.02175; // 1.0 / rpmToVelocity(MAX_RPM);
+    public static double kA = 0.0015;
     public static double kStatic = 0;
 
     /*

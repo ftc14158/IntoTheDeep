@@ -63,12 +63,13 @@ public class SpikeMarkDetector implements VisionProcessor {
     // of the SU tape to be allowed
 
     public int minThreshold = 137;   // Minimum level of red/blue to accept (0-255)
-    public int maxThreshold = 220;   // Maximum level of red/blue to accept (0-255)
-    public int minBCArea = 50000;     // Minimum area of pixels accepted for a barcode square
-    public int  maxBCArea = 150000;    // Maximum area of pixels for a barcode square
+    public int maxThreshold = 255;   // Maximum level of red/blue to accept (0-255)
+    public int minBCArea = 1000;     // Minimum area of pixels accepted for a barcode square
+    public int  maxBCArea = 10000;    // Maximum area of pixels for a barcode square
     public int maxBCSides = 10;  // Maximum sides allow for a barcode square
     public int minSUArea = 900;    // Minimum area of pixel for piece of storage unit
     public int maxSUArea = 7000;   // Maximum area of pixels for a piece of storage unit
+    public double epsilon = 3;
     public int minSUSides = 4;    // Minimum sides for a piece of storage unit
     public int maxSUSides = 12;     // Maximum sides for a piece of storage unti
 
@@ -132,17 +133,17 @@ public class SpikeMarkDetector implements VisionProcessor {
         blueContours = new ArrayList<MatOfPoint>();
         redContours = new ArrayList<MatOfPoint>();
 
-
+/*
         SimpleBlobDetector_Params params = new SimpleBlobDetector_Params();
-        params.set_filterByArea(true);
-        params.set_filterByColor(true);
-        params.set_minArea( 3000 );
-        params.set_maxArea( 12000 );
-        params.set_minThreshold(60);
-        params.set_maxThreshold(250);
+        params.set_filterByArea(false);
+        params.set_filterByColor(false);
+        params.set_minArea( minSUArea );
+        params.set_maxArea( maxSUArea );
+        params.set_minThreshold(255 );
+        params.set_maxThreshold(255);
 
         m_detector = SimpleBlobDetector.create( params );
-
+*/
 
     }
                              // provides frame and camera info
@@ -158,7 +159,7 @@ public class SpikeMarkDetector implements VisionProcessor {
          maxY = imageHeight * VIEW_ENDING_Y_PERCENT / 100;
     }
 
-    protected void finalize()
+/*    protected void finalize()
     {
         homographicTransform.release();
         tmpMat.release();
@@ -169,7 +170,7 @@ public class SpikeMarkDetector implements VisionProcessor {
         blueChannel.release();
         redChannel.release();
     }
-
+*/
     /**
      * Check one shape (contour) to see if it is a barcode square or a piece of the storage unit.
      *
@@ -189,7 +190,7 @@ public class SpikeMarkDetector implements VisionProcessor {
         MatOfPoint2f contour2f = new MatOfPoint2f(contour.toArray());
         MatOfPoint poly = new MatOfPoint();
 
-        Imgproc.approxPolyDP(contour2f, poly2f, 20, true);
+        Imgproc.approxPolyDP(contour2f, poly2f, epsilon, true);
 
         // Now we know how many sides the shape has, and we work out how big it is
         // by getting the area in pixels
@@ -201,7 +202,7 @@ public class SpikeMarkDetector implements VisionProcessor {
 
         // These lines can be uncommented when debugging
         // Log.i("PIPELINE", "contour area="+area+", sides=" + sideCount);
-        // telemetry.addData("Shape", "area="+area+", sides=" + sideCount);
+        System.out.println("Shape: area="+area+", sides=" + sideCount);
 
 
 
@@ -213,21 +214,22 @@ public class SpikeMarkDetector implements VisionProcessor {
 
         bRet = bRet && (area >= minBCArea && area <= maxBCArea);
 
-        if (bRet) telemetry.addData("Shape", "area="+area+", sides=" + sideCount);
+
+        telemetry.addData("Shape" + (bRet ? " **" : " xx"), "area="+area+", sides=" + sideCount);
 
         //    if ( ( r.x < 2)   // shape is against left side
         //         || ( (r.x + r.width) > (imageWidth - 2) ) )  // or shape against right side
         //        return false;
 
         // Check if the shape has the right amount of sides for a barcode square
-        if (bRet && sideCount > 5 && sideCount <= maxBCSides ) {
+        if (bRet && sideCount > 3 && sideCount <= maxBCSides ) {
 
             // Uncomment this for debugging to draw the contour we are
             // examining onto the image
             List<MatOfPoint> polyPoints = new ArrayList<>();
             polyPoints.add(new MatOfPoint(poly2f.toArray() ) );
 
-            Imgproc.drawContours(input, polyPoints, -1, new Scalar(255, 0, 0), 2);
+            Imgproc.drawContours(input, polyPoints, -1, new Scalar(255, 255, 0), 2);
 
             // FIND MOST TOP RIGHT THREE POINTS OF SHAPE
             // sort all points by distance from top right corner
@@ -324,9 +326,37 @@ public class SpikeMarkDetector implements VisionProcessor {
 
              Imgproc.threshold(redChannel, redThreshold, minThreshold, maxThreshold, Imgproc.THRESH_BINARY);
 
+       //      redThreshold.copyTo(frame);
+
+
+        blueContours.clear();
+        redContours.clear();
+        Imgproc.findContours(blueThreshold, blueContours, new Mat(), Imgproc.RETR_TREE, Imgproc.CHAIN_APPROX_SIMPLE);
+        Imgproc.findContours(redThreshold, redContours, new Mat(), Imgproc.RETR_TREE, Imgproc.CHAIN_APPROX_SIMPLE);
+
+
+        Imgproc.drawContours(frame, redContours, -1, new Scalar(0, 55, 255), 1);
+
+
+        //    blueContours = blueContours.stream().filter(i -> filterContours(i)).collect(Collectors.toList());
+
+        // same for red..
+        redContours = redContours.stream().filter(i -> filterContours(frame, i)).collect(Collectors.toList());
+
+     //   Imgproc.drawContours(frame, redContours, -1, new Scalar(255, 255, 0));
+
+        //  redThreshold.copyTo(frame);
+       if (1 == 1) return null;
 
         MatOfKeyPoint keyPoints = new MatOfKeyPoint();
-        m_detector.detect( lumaChannel, keyPoints);
+
+//        telemetry.addData("HELLO", 1);
+
+        m_detector.detect( redThreshold, keyPoints);
+
+        System.out.println("DETECTOR = " + keyPoints.size());
+        if (1 == 1) return null;
+
         Features2d.drawKeypoints(frame, keyPoints, tmpMat, new Scalar(255,100,0), Features2d.DrawMatchesFlags_DRAW_RICH_KEYPOINTS);
 
         int i = 0;
@@ -357,8 +387,8 @@ public class SpikeMarkDetector implements VisionProcessor {
         keyPoints.release();
 
         // copy the updated mat to the frame
-        // tmpMat.copyTo(frame);
-        redThreshold.copyTo(frame);
+        //tmpMat.copyTo(frame);
+        tmpMat.copyTo(frame);
         return null;
     }
 
