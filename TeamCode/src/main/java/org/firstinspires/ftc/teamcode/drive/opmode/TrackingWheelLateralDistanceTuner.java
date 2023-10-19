@@ -82,6 +82,7 @@ public class TrackingWheelLateralDistanceTuner extends CommandOpMode {
     private Button yButton;
     private double headingAccumulator, lastHeading;
     private boolean turningFinished;
+    private int loopcount = 0;
 
     @Override
     public void initialize() {
@@ -120,6 +121,7 @@ public class TrackingWheelLateralDistanceTuner extends CommandOpMode {
                 Pose2d vel = new Pose2d(0, 0, -gamepad1.right_stick_x);
                 drive.setDrivePower(vel);
 
+                drive.updatePoseEstimate();
                 double heading = drive.getPoseEstimate().getHeading();
                 double deltaHeading = heading - lastHeading;
 
@@ -131,6 +133,7 @@ public class TrackingWheelLateralDistanceTuner extends CommandOpMode {
                 telemetry.addLine("Raw Heading (deg): " + Math.toDegrees(heading));
                 telemetry.addLine();
                 telemetry.addLine("Press Y/△ to conclude routine");
+                telemetry.addLine("Loop count = " + loopcount++);
                 telemetry.update();
             }, drive)
             .whenFinished(() -> {

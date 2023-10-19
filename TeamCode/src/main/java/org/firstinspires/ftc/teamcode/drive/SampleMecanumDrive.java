@@ -96,7 +96,7 @@ public class SampleMecanumDrive extends MecanumDrive {
 
     private DcMotorEx leftFront, leftRear, rightRear, rightFront;
     private List<DcMotorEx> motors;
-    private BHI260IMU imu;
+   // private BHI260IMU imu;
 
     private VoltageSensor batteryVoltageSensor;
 
@@ -133,14 +133,14 @@ public class SampleMecanumDrive extends MecanumDrive {
             module.setBulkCachingMode(LynxModule.BulkCachingMode.AUTO);
         }
 
-        // TODO: adjust the names of the following hardware devices to match your configuration
+  /*      //  adjust the names of the following hardware devices to match your configuration
         imu = hardwareMap.get(BHI260IMU.class, "imu");
         BHI260IMU.Parameters parameters = new BHI260IMU.Parameters( new RevHubOrientationOnRobot(
                 RevHubOrientationOnRobot.LogoFacingDirection.UP,
                 RevHubOrientationOnRobot.UsbFacingDirection.RIGHT));
         // parameters.angleUnit = BHI260IMUAngleUnit.RADIANS;
         imu.initialize(parameters);
-
+*/
 
         // TODO: if your hub is mounted vertically, remap the IMU axes so that the z-axis points
         // upward (normal to the floor) using a command like the following:
@@ -176,6 +176,7 @@ public class SampleMecanumDrive extends MecanumDrive {
         rightRear.setDirection(DcMotor.Direction.REVERSE);
         // TODO: if desired, use setLocalizer() to change the localization method
         // for instance, setLocalizer(new ThreeTrackingWheelLocalizer(...));
+        setLocalizer(new StandardTrackingWheelLocalizer(hardwareMap));
     }
 
     public TrajectoryBuilder trajectoryBuilder(Pose2d startPose) {
@@ -310,6 +311,12 @@ public class SampleMecanumDrive extends MecanumDrive {
                     setDriveSignal(new DriveSignal());
                 }
 
+
+                if (lastError.getY() > 3) {
+                    mode = Mode.IDLE;
+                    setDriveSignal(new DriveSignal());
+                }
+
                 break;
             }
         }
@@ -401,6 +408,6 @@ public class SampleMecanumDrive extends MecanumDrive {
 
     @Override
     public double getRawExternalHeading() {
-        return imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
+        return 0; // imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
     }
 }
