@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.drive;
 
 import com.acmerobotics.dashboard.config.Config;
+import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 
 /*
@@ -48,7 +49,7 @@ public class DriveConstants {
      */
     public static double WHEEL_RADIUS = 1.4763; // in
     public static double GEAR_RATIO = 1.251; // 1.096; // 44; // 28571429;  // 1.06; // output (wheel) speed / input (motor) speed
-    public static double TRACK_WIDTH = 14.825; // 11.64; // 12.6 is actual; 12.24 after tuning to get effective // in
+    public static double TRACK_WIDTH = 15.73; //     14.5; // 11.64; // 12.6 is actual; 12.24 after tuning to get effective // in
 
     /*
      * These are the feedforward parameters used to model the drive motor behavior. If you are using
@@ -56,7 +57,7 @@ public class DriveConstants {
      * motor encoders or have elected not to use them for velocity control, these values should be
      * empirically tuned.
      */
-    public static double kV = 0.0195; // 175; // 1.0 / rpmToVelocity(MAX_RPM);
+    public static double kV = 0.0205; // 175; // 1.0 / rpmToVelocity(MAX_RPM);
     public static double kA = 0.0015;
     public static double kStatic = 0;
 
@@ -67,11 +68,18 @@ public class DriveConstants {
      * small and gradually increase them later after everything is working. All distance units are
      * inches.
      */
-    public static double MAX_VEL = 28;   // measured 31.08, lower for margin
-    // voltage Compensated kF 18.074730536227346
-    public static double MAX_ACCEL = 28;
-    public static double MAX_ANG_VEL = Math.toRadians(150);
-    public static double MAX_ANG_ACCEL = Math.toRadians(180);
+    public static double MAX_VEL =35;   // MAX 51, RECOMMENDED 41. USE 35
+    public static double MAX_ACCEL = 25; // 28;
+    public static double MAX_ANG_VEL = Math.toRadians(150);   // TUNER RECOMMENDED 160
+    public static double MAX_ANG_ACCEL = Math.toRadians(100);
+
+    /*
+     * Adjust the orientations here to match your robot. See the FTC SDK documentation for details.
+     */
+    public static RevHubOrientationOnRobot.LogoFacingDirection LOGO_FACING_DIR =
+            RevHubOrientationOnRobot.LogoFacingDirection.LEFT;
+    public static RevHubOrientationOnRobot.UsbFacingDirection USB_FACING_DIR =
+            RevHubOrientationOnRobot.UsbFacingDirection.UP;
 
 
     public static double encoderTicksToInches(double ticks) {

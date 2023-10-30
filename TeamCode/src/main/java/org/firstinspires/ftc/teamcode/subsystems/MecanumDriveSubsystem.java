@@ -40,6 +40,11 @@ public class MecanumDriveSubsystem extends SubsystemBase {
         drive.setPoseEstimate(pose);
     }
 
+    @Override
+    public void periodic() {
+   //     drive.update();
+    }
+
     public void update() {
         drive.update();
     }
