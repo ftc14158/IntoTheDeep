@@ -94,4 +94,12 @@ public class DriveConstants {
         // see https://docs.google.com/document/d/1tyWrXDfMidwYyP_5H4mZyVgaEswhOC35gvdmP-V-5hA/edit#heading=h.61g9ixenznbx
         return 32767 / ticksPerSecond;
     }
+
+    public static double JOYSTICK_MAXPOS_X_SLEWRATE = 1.2;
+    public static double JOYSTICK_MAXNEG_X_SLEWRATE = 3.0;
+    public static double JOYSTICK_MAXPOS_Y_SLEWRATE = 1.2;
+    public static double JOYSTICK_MAXNEG_Y_SLEWRATE = 3.0;
+    public static double JOYSTICK_MAXPOS_R_SLEWRATE = 1.2;
+    public static double JOYSTICK_MAXNEG_R_SLEWRATE = 3.0;
+
 }

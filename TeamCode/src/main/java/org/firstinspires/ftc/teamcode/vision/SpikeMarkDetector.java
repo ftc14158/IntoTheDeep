@@ -1,6 +1,8 @@
 package org.firstinspires.ftc.teamcode.vision;
 
 import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.internal.camera.calibration.CameraCalibration;
@@ -35,8 +37,8 @@ public class SpikeMarkDetector implements VisionProcessor {
     private int frame_width, frame_height;
 
     // which vertical percentage of the image to analyze
-    private static final int VIEW_STARTING_Y_PERCENT = 0;
-    private static final int VIEW_ENDING_Y_PERCENT = 100;
+    private static final int VIEW_STARTING_Y_PERCENT = 25;
+    private static final int VIEW_ENDING_Y_PERCENT = 70;
 
     // A copy of the telemetry object to sending messages
     // These messages can be seen in the EOVCSim program that
@@ -97,25 +99,13 @@ public class SpikeMarkDetector implements VisionProcessor {
     private int signalX;
     private int signalY;
 
-    private Mat homographicTransform;
+    public class VisionResult {
+        int shapes = 0;
+        String message = "";
+    }
 
     public SpikeMarkDetector(Telemetry telemetry) {
         this.telemetry = telemetry;
-
-        MatOfPoint2f srcPoints = new MatOfPoint2f();
-        srcPoints.fromArray(
-                new Point(82, 42), new Point( 620,48 ), new Point(523,190),
-                new Point(150,232), new Point(54,455), new Point(570,404) );
-
-        MatOfPoint2f dstPoints = new MatOfPoint2f();
-        dstPoints.fromArray(
-                new Point(40, 40), new Point( 600,0 ), new Point(440,120),
-                new Point(80,200), new Point(0,360), new Point(440,360) );
-
-        homographicTransform = Calib3d.findHomography( srcPoints, dstPoints );
-
-        dstPoints.release();
-        srcPoints.release();
 
         // Create all the Mat() object to hold the different images
         matYCrCb = new Mat();
@@ -159,9 +149,8 @@ public class SpikeMarkDetector implements VisionProcessor {
          maxY = imageHeight * VIEW_ENDING_Y_PERCENT / 100;
     }
 
-/*    protected void finalize()
+    protected void finalize()
     {
-        homographicTransform.release();
         tmpMat.release();
         lumaThreshold.release();
         blueThreshold.release();
@@ -170,7 +159,7 @@ public class SpikeMarkDetector implements VisionProcessor {
         blueChannel.release();
         redChannel.release();
     }
-*/
+
     /**
      * Check one shape (contour) to see if it is a barcode square or a piece of the storage unit.
      *
@@ -202,7 +191,7 @@ public class SpikeMarkDetector implements VisionProcessor {
 
         // These lines can be uncommented when debugging
         // Log.i("PIPELINE", "contour area="+area+", sides=" + sideCount);
-        System.out.println("Shape: area="+area+", sides=" + sideCount);
+//        System.out.println("Shape: area="+area+", sides=" + sideCount);
 
 
 
@@ -304,7 +293,7 @@ public class SpikeMarkDetector implements VisionProcessor {
         Imgproc.cvtColor(frame, matYCrCb, Imgproc.COLOR_RGB2YCrCb);
 
         // Make a rectangle for the area we are not interested in, and blank it
-/*            Rect r = new Rect();
+            Rect r = new Rect();
             r.x = 0;
             r.y = 0;
             r.width = matYCrCb.width();
@@ -312,13 +301,10 @@ public class SpikeMarkDetector implements VisionProcessor {
 
             Imgproc.rectangle(matYCrCb, r, new Scalar(0, 0, 0), Imgproc.FILLED);
 
-
-
-
             r.y = maxY;
             r.height = matYCrCb.height() - maxY;
             Imgproc.rectangle(matYCrCb, r, new Scalar(0, 0, 0), Imgproc.FILLED);
-*/
+
 
         Core.extractChannel(matYCrCb, redChannel, 1);
         Core.extractChannel(matYCrCb, blueChannel, 2);
@@ -346,54 +332,26 @@ public class SpikeMarkDetector implements VisionProcessor {
      //   Imgproc.drawContours(frame, redContours, -1, new Scalar(255, 255, 0));
 
         //  redThreshold.copyTo(frame);
-       if (1 == 1) return null;
+  //     if (1 == 1) { telemetry.update(); return null; }
 
-        MatOfKeyPoint keyPoints = new MatOfKeyPoint();
+        telemetry.update();
 
-//        telemetry.addData("HELLO", 1);
-
-        m_detector.detect( redThreshold, keyPoints);
-
-        System.out.println("DETECTOR = " + keyPoints.size());
-        if (1 == 1) return null;
-
-        Features2d.drawKeypoints(frame, keyPoints, tmpMat, new Scalar(255,100,0), Features2d.DrawMatchesFlags_DRAW_RICH_KEYPOINTS);
-
-        int i = 0;
-        List<KeyPoint> kps = keyPoints.toList();
-        for (KeyPoint keyPoint : kps) {
-//            signalX = (int)keyPoint.pt.x;
-//            signalY = (int)keyPoint.pt.y;
-//            telemetry.addData("Circle","(" + Math.round(keyPoint.pt.x) + "," + Math.round(keyPoint.pt.y) + ") "  + Math.round( Math.PI * Math.pow(keyPoint.size/2.0, 2.0) ) );
-
-            // transform
-
-            Mat camPoints = new Mat(1, 1, CvType.CV_32FC2);
-            Mat floorPoints = new Mat(1, 1, CvType.CV_32FC2);
-
-            camPoints.put(0, 0, new double[] { keyPoint.pt.x, keyPoint.pt.y });
-
-            perspectiveTransform(camPoints, floorPoints, homographicTransform);
-
-            double[] xformed = floorPoints.get(0,0);
-            signalX = (int) xformed[0];
-            signalY = (int) xformed[1];
-
-        }
-
-        signalFound = ( kps.size() == 1);
-        telemetry.addData("SIGNAL", signalFound ? "(" + signalX + "," + signalY + ") " : "" ); // + Math.round( Math.PI * Math.pow(keyPoint.size/2.0, 2.0) ) );
-
-        keyPoints.release();
-
-        // copy the updated mat to the frame
-        //tmpMat.copyTo(frame);
-        tmpMat.copyTo(frame);
-        return null;
+        VisionResult vr = new VisionResult();
+        vr.shapes = 3;
+        vr.message = "Hello";
+        return vr;
     }
 
     @Override
     public void onDrawFrame(Canvas canvas, int onscreenWidth, int onscreenHeight, float scaleBmpPxToCanvasPx, float scaleCanvasDensity, Object userContext) {
+        Paint paint = new Paint();
 
+        paint.setColor(Color.YELLOW);
+        paint.setStrokeWidth(5);
+        paint.setTextSize(20);
+
+        canvas.drawLine(0, minY* scaleBmpPxToCanvasPx, onscreenWidth, minY* scaleBmpPxToCanvasPx, paint);
+        canvas.drawLine(0, maxY * scaleBmpPxToCanvasPx -1, onscreenWidth, maxY * scaleBmpPxToCanvasPx -1, paint);
+        canvas.drawText( ((VisionResult)userContext).message, 150, 50, paint);
     }
 }
