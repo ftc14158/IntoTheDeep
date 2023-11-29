@@ -16,6 +16,7 @@ import org.firstinspires.ftc.teamcode.RobotContainer;
 import org.firstinspires.ftc.teamcode.commands.ArmControllerCommand;
 import org.firstinspires.ftc.teamcode.commands.ArmToCruiseCommand;
 import org.firstinspires.ftc.teamcode.commands.ArmToGroundCommand;
+import org.firstinspires.ftc.teamcode.commands.LaunchDroneCommand;
 import org.firstinspires.ftc.teamcode.commands.MecanumDriveCommand;
 import org.firstinspires.ftc.teamcode.commands.RunCommand;
 import org.firstinspires.ftc.teamcode.commands.TrajectoryBuildCommand;
@@ -132,6 +133,10 @@ public class JavaDrive extends CommandOpMode {
                 )
         );
 
+        m_robot.getGamepad1().getGamepadButton(GamepadKeys.Button.START).whenPressed(
+
+                new LaunchDroneCommand(m_robot.getDroneSubsystem()).withTimeout(3000)
+        );
 
         FtcDashboard dashboard = FtcDashboard.getInstance();
         schedule( new PerpetualCommand( new RunCommand( () -> { m_robot.sendTelem( dashboard );})));

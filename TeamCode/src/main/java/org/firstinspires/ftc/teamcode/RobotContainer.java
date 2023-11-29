@@ -16,6 +16,7 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import org.firstinspires.ftc.teamcode.commands.MecanumDriveCommand;
 import org.firstinspires.ftc.teamcode.drive.SampleMecanumDrive;
 import org.firstinspires.ftc.teamcode.subsystems.ArmSubsystem;
+import org.firstinspires.ftc.teamcode.subsystems.DroneSubsystem;
 import org.firstinspires.ftc.teamcode.subsystems.MecanumDriveSubsystem;
 
 import java.util.Map;
@@ -31,6 +32,7 @@ public class RobotContainer {
 
     // Other subsystems to come..
     private final ArmSubsystem m_arm;
+    private final DroneSubsystem m_drone;
 
     public Map<String, Object> m_telemetryItems;
 
@@ -51,6 +53,7 @@ public class RobotContainer {
         m_gamepad2 = new GamepadEx(gamepad2);
 
         m_arm = new ArmSubsystem(hardwareMap, this);
+        m_drone = new DroneSubsystem(hardwareMap, this);
 
         if (bTeleOp) {
   //          configureButtonBindings();
@@ -73,6 +76,7 @@ public class RobotContainer {
     }
     public MecanumDriveSubsystem getDrivetrain() { return m_drivetrain; }
     public ArmSubsystem getArm() { return m_arm; }
+    public DroneSubsystem getDroneSubsystem() { return m_drone; }
 
     private void configureButtonBindings() {
     //    m_drivetrain.setDefaultCommand(

@@ -37,7 +37,7 @@ public class ArmSubsystem extends SubsystemBase {
 
     // These two motors are paired
     private MotorEx elbowMotor1;
-    private MotorEx elbowMotor2;
+    // private MotorEx elbowMotor2;
 
     private MotorEx slideMotor;
     private arm_mode slideMode;
@@ -87,7 +87,7 @@ public class ArmSubsystem extends SubsystemBase {
         m_slidePIDController = new PIDController(ArmConstants.SLIDE_KP, ArmConstants.SLIDE_KI, 0);
 
         elbowMotor1 = new MotorEx(hardwareMap, ArmConstants.ELBOW_MOTOR1);
-        elbowMotor2 = new MotorEx(hardwareMap, ArmConstants.ELBOW_MOTOR2);
+        // elbowMotor2 = new MotorEx(hardwareMap, ArmConstants.ELBOW_MOTOR2);
         slideMotor = new MotorEx(hardwareMap, ArmConstants.SLIDE_MOTOR);
         wristMotor = new MotorEx(hardwareMap, ArmConstants.WRIST_MOTOR);
 
@@ -101,13 +101,14 @@ public class ArmSubsystem extends SubsystemBase {
         elbowMotor1.setDistancePerPulse(1);
         elbowMotor1.setPositionCoefficient( 0 ); // 0.02 );
 
+/*
 //        elbowMotor2.setInverted(true);
         elbowMotor2.setZeroPowerBehavior(Motor.ZeroPowerBehavior.FLOAT);
         elbowMotor2.resetEncoder();
         elbowMotor2.setRunMode(Motor.RunMode.RawPower);
         elbowMotor2.setDistancePerPulse(1);
         elbowMotor2.setPositionCoefficient( 0 ); // .02 );
-
+*/
         slideMotor.setZeroPowerBehavior(Motor.ZeroPowerBehavior.FLOAT);
         slideMotor.setInverted(true);
         slideMotor.setRunMode(Motor.RunMode.RawPower);
@@ -254,7 +255,7 @@ public class ArmSubsystem extends SubsystemBase {
                 if (iSteady > 4) {
                     if (iSteady == 5) {
                         elbowMotor1.resetEncoder();
-                        elbowMotor2.resetEncoder();
+      //                  elbowMotor2.resetEncoder();
                         m_mode = arm_mode.IDLE;
                     }
                     iSteady = 6;
@@ -320,7 +321,7 @@ public class ArmSubsystem extends SubsystemBase {
                         wristHomePosition = currentWristPosition;
                         wristMode = arm_mode.POSITIONING;
                         wristMotor.setRunMode(Motor.RunMode.PositionControl);
-                        wristMotor.setTargetPosition( wristHomePosition );
+                        wristMotor.setTargetPosition( wristHomePosition + (int)ArmConstants.WRIST_POS0 );
                     }
                 }
 
@@ -364,7 +365,7 @@ public class ArmSubsystem extends SubsystemBase {
     }
     private void setElbowPower(double power) {
         elbowMotor1.set(power * ArmConstants.ARM_POWER_SIGN);
-        elbowMotor2.set(power * ArmConstants.ARM_POWER_SIGN);
+        // elbowMotor2.set(power * ArmConstants.ARM_POWER_SIGN);
 
     }
 
@@ -475,7 +476,7 @@ public class ArmSubsystem extends SubsystemBase {
 
     public void setWristPositionLevel(int level) {
         if (level == 0) {
-            wristMotor.setTargetPosition(wristHomePosition);
+            wristMotor.setTargetPosition(wristHomePosition + ((int)ArmConstants.WRIST_POS0));
         } else if (level == 1) {
             wristMotor.setTargetPosition(wristHomePosition + ((int)ArmConstants.WRIST_POS1));
         }
