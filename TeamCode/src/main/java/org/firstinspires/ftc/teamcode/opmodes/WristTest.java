@@ -13,8 +13,8 @@ import org.firstinspires.ftc.teamcode.commands.RunCommand;
 import org.firstinspires.ftc.teamcode.subsystems.ArmConstants;
 import org.firstinspires.ftc.teamcode.subsystems.mechanism.WristController;
 
-@TeleOp(group="test", name = "Sensor Test")
-public class SensorTest extends CommandOpMode {
+@TeleOp(group="test", name = "Test Wrist")
+public class WristTest extends CommandOpMode {
 
     private WristController wristController;
 
@@ -42,11 +42,9 @@ public class SensorTest extends CommandOpMode {
         schedule(new RunCommand(() -> {
             wristController.update();
 
+            telemetry.addLine("Gamepad1: A=stop,X=POS0,Y=POS1,B=POS2");
+            wristController.debugInfo().forEach( (k,v) -> telemetry.addData(k,v) );
 
-            telemetry.addData("Wrist angle", wristController.angle());
-            telemetry.addData("Wrist voltage", wristController.voltage());
-            telemetry.addData("Wrist error", wristController.error());
-            telemetry.addData("Wrist setpoint", wristController.setPoint());
             telemetry.update();
         }));
     }

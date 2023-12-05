@@ -33,7 +33,7 @@ public class ArmTest extends CommandOpMode {
 
     @Override
     public void initialize() {
-        m_robot = new RobotContainer( true, hardwareMap,
+        m_robot = new RobotContainer( true, hardwareMap, telemetry,
                 gamepad1, gamepad2, new Pose2d(-39,-63.5, Math.toRadians(90)));
 
         m_robot.getGamepad2().getGamepadButton(GamepadKeys.Button.X).whenPressed(

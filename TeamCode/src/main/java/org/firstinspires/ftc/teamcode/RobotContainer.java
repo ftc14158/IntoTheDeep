@@ -5,21 +5,41 @@ import android.util.ArrayMap;
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.geometry.Pose2d;
+import com.arcrobotics.ftclib.command.Command;
+import com.arcrobotics.ftclib.command.CommandScheduler;
 import com.arcrobotics.ftclib.command.InstantCommand;
 import com.arcrobotics.ftclib.command.RunCommand;
+import com.arcrobotics.ftclib.command.SequentialCommandGroup;
+import com.arcrobotics.ftclib.command.WaitUntilCommand;
 import com.arcrobotics.ftclib.gamepad.GamepadEx;
 import com.arcrobotics.ftclib.gamepad.GamepadKeys.Button;
 
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
+import org.firstinspires.ftc.robotcore.external.Telemetry;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.BuiltinCameraDirection;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
+import org.firstinspires.ftc.teamcode.commands.ArmStartPositionCommand;
+import org.firstinspires.ftc.teamcode.commands.ArmToCruiseCommand;
+import org.firstinspires.ftc.teamcode.commands.ArmToGroundCommand;
 import org.firstinspires.ftc.teamcode.commands.MecanumDriveCommand;
+import org.firstinspires.ftc.teamcode.commands.TrajectoryBuildCommand;
 import org.firstinspires.ftc.teamcode.drive.SampleMecanumDrive;
+import org.firstinspires.ftc.teamcode.opmodes.AutonConstants;
+import org.firstinspires.ftc.teamcode.subsystems.ArmConstants;
 import org.firstinspires.ftc.teamcode.subsystems.ArmSubsystem;
 import org.firstinspires.ftc.teamcode.subsystems.DroneSubsystem;
 import org.firstinspires.ftc.teamcode.subsystems.MecanumDriveSubsystem;
+import org.firstinspires.ftc.teamcode.trajectorysequence.TrajectorySequence;
+import org.firstinspires.ftc.teamcode.trajectorysequence.TrajectorySequenceBuilder;
+import org.firstinspires.ftc.teamcode.vision.TeamPropDetector;
+import org.firstinspires.ftc.vision.VisionPortal;
+import org.firstinspires.ftc.vision.VisionProcessor;
+import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 
 import java.util.Map;
+import java.util.function.Function;
 
 public class RobotContainer {
 
@@ -38,9 +58,20 @@ public class RobotContainer {
 
     private TelemetryPacket m_telemPacket;
 
-    public RobotContainer(boolean bTeleOp, HardwareMap hardwareMap, Gamepad gamepad1, Gamepad gamepad2,
+    private Telemetry telemetry;
+
+    // vision processors
+    public VisionPortal visionPortal = null;
+    private TeamPropDetector visionPropDetector = null;
+    private AprilTagProcessor visionAprilTag = null;
+
+    private HardwareMap hardwareMap;
+
+    public RobotContainer(boolean bTeleOp, HardwareMap hardwareMap, Telemetry telemetry, Gamepad gamepad1, Gamepad gamepad2,
                           Pose2d startingPose) {
 
+        this.telemetry = telemetry;
+        this.hardwareMap = hardwareMap;
         m_telemPacket = new TelemetryPacket();
         m_telemetryItems = new ArrayMap<String, Object>();
 
@@ -60,10 +91,8 @@ public class RobotContainer {
             m_drivetrain.stop();
 
         } else {
-            // stop drivetrain if not being commanded otherwise during loop
-            m_drivetrain.setDefaultCommand( new RunCommand( m_drivetrain::stop, m_drivetrain ) );
+            m_drivetrain.setDefaultCommand( new RunCommand( () -> { m_drivetrain.stop(); m_drivetrain.update(); } , m_drivetrain ) );
 
-            //intake.setDefaultCommand( new RunCommand(intake::stop, intake ));
         }
 
     }
@@ -78,96 +107,6 @@ public class RobotContainer {
     public ArmSubsystem getArm() { return m_arm; }
     public DroneSubsystem getDroneSubsystem() { return m_drone; }
 
-    private void configureButtonBindings() {
-    //    m_drivetrain.setDefaultCommand(
-    //            new MecanumDriveCommand()DefaultDifferentialDrive(drivetrain , () -> m_gamepad1.getLeftX() / 2,
-    //                    () -> m_gamepad1.getLeftY()
-    //            )
-    //    );
-
-        // make sure carousel stops if we are not telling it to do anything else
-    //    carousel.setDefaultCommand( new RunCommand( carousel::stop, carousel) );
-
-    //    assignActionButtons(m_gamepad1);
-    //    assignActionButtons(m_gamepad2);
-
-
-
-//                .whenReleased( new InstantCommand( () -> m_armSubsystem.setPower(0)));
-/*
-     m_gamepad1.getGamepadButton(Button.X).whenPressed( new SequentialCommandGroup(
-             new DriveForward(m_driveSubsystem, 1).withTimeout(1000),
-        new RotateToHeading(m_driveSubsystem, m_IMUSubsystem, 90, telemetry)
-             ));
-
-        // make button A drive forward for 4 seconds or until blue detected.
-        m_gamepad1.getGamepadButton(Button.A).whenPressed(
-            cc      new DriveForward(m_driveSubsystem, 1).withTimeout(4000)
-                .interruptOn( m_colorSensors::isBlue )
-        );
-
-
-
-        m_gamepad1.getGamepadButton(Button.B).toggleWhenPressed( new RotateToHeading(m_driveSubsystem, m_IMUSubsystem, 90, telemetry));
-
-     // Run each motor in turn when X button is pressed on keypad
-
-     /*
-     m_gamepad1.getGamepadButton(Button.X).whenPressed( new SequentialCommandGroup(
-
-             new RunCommand( () -> m_driveSubsystem.setMotor(0, .5), m_driveSubsystem ).withTimeout(2000),
-             new RunCommand( () -> m_driveSubsystem.setMotor( 0, 0), m_driveSubsystem ).withTimeout(1000),
-        new RunCommand( () -> m_driveSubsystem.setMotor(1, .5), m_driveSubsystem ).withTimeout(2000),
-                new RunCommand( () -> m_driveSubsystem.setMotor( 1, 0), m_driveSubsystem ).withTimeout(1000),
-        new RunCommand( () -> m_driveSubsystem.setMotor(2, .5), m_driveSubsystem ).withTimeout(2000),
-                new RunCommand( () -> m_driveSubsystem.setMotor( 2, 0), m_driveSubsystem ).withTimeout(1000),
-        new RunCommand( () -> m_driveSubsystem.setMotor(3, .5), m_driveSubsystem ).withTimeout(2000),
-                new InstantCommand( () -> m_driveSubsystem.setMotor( 3, 0), m_driveSubsystem )
-     ) );
-*/
-    }
-/*
-    private void assignActionButtons(GamepadEx g) {
-
-        g.getGamepadButton(Button.DPAD_UP).whenPressed(new InstantCommand(
-                () -> arm.nudgePosition(20)));
-
-        g.getGamepadButton(Button.DPAD_DOWN).whenPressed(new InstantCommand(
-                () -> arm.nudgePosition(-20)));
-
-        g.getGamepadButton(Button.A).whenPressed(new InstantCommand(
-                () -> arm.goToLevel(1)));
-
-        g.getGamepadButton(Button.B).whenPressed(new InstantCommand(
-                () -> arm.goToLevel(2)));
-
-        g.getGamepadButton(Button.Y).whenPressed(new InstantCommand(
-                () -> arm.goToLevel(3)));
-
-        // turn off arm motor so falls to bottom position
-        g.getGamepadButton(Button.X).whenPressed(new InstantCommand(
-                () -> arm.goToLevel(0) ) );
-
-        g.getGamepadButton(Button.LEFT_BUMPER).toggleWhenPressed(
-                new InstantCommand(intake::suck),
-                new InstantCommand(intake::stop)
-        );
-
-        g.getGamepadButton(Button.RIGHT_BUMPER).whenPressed(
-                new InstantCommand(intake::eject)
-        ).whenReleased(intake::stop);
-
-
-        g.getGamepadButton(Button.DPAD_LEFT).whenHeld(
-                new RunCommand(carousel::forward, carousel)
-        );
-
-        g.getGamepadButton(Button.DPAD_RIGHT).whenHeld(
-                new RunCommand(carousel::backward, carousel)
-        );
-
-    }
-*/
 
     public void addTelem(String name, Object value) {
         m_telemetryItems.put(name, value);
@@ -178,9 +117,177 @@ public class RobotContainer {
     }
 
     public void sendTelem(FtcDashboard dashboard) {
-        m_telemPacket.putAll( m_telemetryItems );
-        dashboard.sendTelemetryPacket( m_telemPacket);
-        m_telemPacket = new TelemetryPacket();
+        if (dashboard != null) {
+            m_telemPacket.putAll( m_telemetryItems );
+            dashboard.sendTelemetryPacket( m_telemPacket);
+            m_telemPacket = new TelemetryPacket();
+        }
+    }
+
+    public AprilTagProcessor aprilTagProcessor() {
+        // create april tag processor if not created
+        if (visionAprilTag == null) {
+            // Set up apriltag
+            // Create the AprilTag processor.
+            visionAprilTag = new AprilTagProcessor.Builder()
+
+                    // The following default settings are available to un-comment and edit as needed.
+                    //.setDrawAxes(false)
+                    //.setDrawCubeProjection(false)
+                    //.setDrawTagOutline(true)
+                    //.setTagFamily(AprilTagProcessor.TagFamily.TAG_36h11)
+                    //.setTagLibrary(AprilTagGameDatabase.getCenterStageTagLibrary())
+                    //.setOutputUnits(DistanceUnit.INCH, AngleUnit.DEGREES)
+
+                    // == CAMERA CALIBRATION ==
+                    // If you do not manually specify calibration parameters, the SDK will attempt
+                    // to load a predefined calibration for your camera.
+                    //.setLensIntrinsics(578.272, 578.272, 402.145, 221.506)
+                    // ... these parameters are fx, fy, cx, cy.
+
+                    .build();
+
+        }
+        return visionAprilTag;
+    }
+
+    public TeamPropDetector teamPropProcessor() {
+        // create april tag processor if not created
+        if (visionPropDetector == null) {
+            // Set up apriltag
+            // Create the AprilTag processor.
+            visionPropDetector = new TeamPropDetector( telemetry );
+
+        }
+        return visionPropDetector;
+    }
+
+    public void startVisionProcessor(VisionProcessor vp) {
+        if (visionPortal != null) visionPortal.setProcessorEnabled(vp, true);
+    }
+
+    public void stopVisionProcessor(VisionProcessor vp) {
+        if (visionPortal != null) visionPortal.setProcessorEnabled(vp, false);
+    }
+
+    public boolean isVisionProcessorRunning(VisionProcessor vp) {
+        return visionPortal.getProcessorEnabled(vp);
+    }
+
+    /**
+     * Initialize the Vision portal with given processor enabled
+     */
+    public void initVision() {
+
+        // Create the vision portal by using a builder.
+        VisionPortal.Builder builder = new VisionPortal.Builder();
+
+        // Set the camera (webcam vs. built-in RC phone camera).
+        builder.setCamera(hardwareMap.get(WebcamName.class, "Webcam 1"));
+
+        // Choose a camera resolution. Not all cameras support all resolutions.
+        //builder.setCameraResolution(new Size(640, 480));
+
+        // Enable the RC preview (LiveView).  Set "false" to omit camera monitoring.
+        //builder.enableLiveView(true);
+
+        // Set the stream format; MJPEG uses less bandwidth than default YUY2.
+        //builder.setStreamFormat(VisionPortal.StreamFormat.YUY2);
+
+        // Choose whether or not LiveView stops if no processors are enabled.
+        // If set "true", monitor shows solid orange screen if no processors enabled.
+        // If set "false", monitor shows camera view without annotations.
+        //builder.setAutoStopLiveView(false);
+
+        // Set and enable the processor.
+        builder.addProcessor( aprilTagProcessor() );
+        builder.addProcessor( teamPropProcessor() );
+
+        // Build the Vision Portal, using the above settings.
+        visionPortal = builder.build();
+        visionPortal.setProcessorEnabled(visionAprilTag, false);
+        visionPortal.setProcessorEnabled(visionPropDetector, false);
+
+        // Disable or re-enable the aprilTag processor at any time.
+        //visionPortal.setProcessorEnabled(aprilTag, true);
+
+    }   // end method initAprilTag()
+
+    public void stopVision() {
+        if (visionPortal != null) {
+            stopVisionProcessor(visionPropDetector);
+            stopVisionProcessor(visionAprilTag);
+
+            visionPortal.close();
+            visionPortal = null;
+        }
+    }
+
+    public CommandBuilder commandBuilder() {
+        return new CommandBuilder(this);
+    }
+
+    public class CommandBuilder {
+        private RobotContainer robot;
+
+        public CommandBuilder(RobotContainer robot) {
+            this.robot = robot;
+        }
+
+        public Command armToGround() {
+            return new ArmToGroundCommand(robot.getArm());
+        }
+
+        public Command homeSlide() {
+            return new SequentialCommandGroup(
+                    new InstantCommand( () -> robot.getArm().homeSlide() ),
+                    new WaitUntilCommand( () -> robot.getArm().slideIdle() )
+            );
+        }
+
+
+        public Command armToCruise() {
+            return new ArmToCruiseCommand(robot.getArm());
+        }
+
+        public Command armToStartPos() {
+            return new ArmStartPositionCommand(robot.getArm());
+        }
+
+        public TrajectoryBuildCommand buildTraj(Function<TrajectorySequenceBuilder, TrajectorySequence> buildFunction) {
+            return new TrajectoryBuildCommand(robot.getDrivetrain(), buildFunction);
+        }
+
+        public InstantCommand openGrab() {
+            return new InstantCommand( () -> robot.getArm().grabOpen(), robot.getArm() );
+        }
+
+        public InstantCommand closeGrab() {
+            return new InstantCommand( () -> robot.getArm().grabClose(), robot.getArm() );
+        }
+
+        public Command waitMillisecs(int ms) {
+            return new RunCommand( () -> {} ).withTimeout(ms);
+        }
+
+        public Command raiseOnePixelFromGround() {
+            return new SequentialCommandGroup(
+                new InstantCommand(() -> { robot.getArm().setSlidePosition(ArmConstants.SLIDE_GROUND - ArmConstants.SLIDE_PIXEL_HEIGHT); } ),
+                new WaitUntilCommand( () -> robot.getArm().slideCloseToPos() )
+            );
+        }
+
+        public Command raiseOutandRelease() {
+            return new SequentialCommandGroup(
+                    new InstantCommand( () -> robot.getArm().goToPosition(AutonConstants.ARM_RELEASE_POSITION) ),
+                    new InstantCommand( () -> { robot.getArm().setWristRelativeAngle(AutonConstants.WRIST_RELEASE_POSITION); } ),
+                    new InstantCommand( () -> { robot.getArm().setSlidePosition(AutonConstants.SLIDE_RELEASE_POSITION );}),
+                    new WaitUntilCommand( () -> robot.getArm().slideCloseToPos() ),
+                      new WaitUntilCommand( () -> !robot.getDrivetrain().isBusy() ),
+                    openGrab()
+            );
+
+        }
 
     }
 }

@@ -21,9 +21,9 @@ public class DroneSubsystem extends SubsystemBase {
     public DroneSubsystem(HardwareMap hardwareMap, RobotContainer robot) {
         m_robot = robot;
 
-        rollerMotor = new MotorEx(hardwareMap, "launcher");
-        rollerMotor.setInverted(true);
-        rollerMotor.setRunMode(Motor.RunMode.RawPower);
+//        rollerMotor = new MotorEx(hardwareMap, "launcher");
+//        rollerMotor.setInverted(true);
+//        rollerMotor.setRunMode(Motor.RunMode.RawPower);
         // rollerMotor.stopMotor();
 
         launchServo = hardwareMap.get(Servo.class, "launch");
@@ -32,12 +32,12 @@ public class DroneSubsystem extends SubsystemBase {
 
     public void launch() {
         // Run motor to launch
-        rollerMotor.set(-1);
+  //      rollerMotor.set(-1);
         launchServo.setPosition( ArmConstants.DRONE_LAUNCH );
     }
 
     public void stop() {
-        rollerMotor.stopMotor();
+//        rollerMotor.stopMotor();
         launchServo.setPosition( ArmConstants.DRONE_SET );
     }
 }

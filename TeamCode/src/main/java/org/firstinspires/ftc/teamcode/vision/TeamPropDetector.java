@@ -9,36 +9,33 @@ import org.firstinspires.ftc.robotcore.internal.camera.calibration.CameraCalibra
 import org.firstinspires.ftc.vision.VisionProcessor;
 import org.opencv.core.Mat;
 import org.opencv.core.Core;
-import org.opencv.core.CvType;
-import org.opencv.core.KeyPoint;
-import org.opencv.core.MatOfKeyPoint;
 import org.opencv.core.MatOfPoint;
 import org.opencv.core.MatOfPoint2f;
 import org.opencv.core.Point;
 import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
-import org.opencv.core.Size;
-import org.opencv.features2d.Features2d;
 import org.opencv.features2d.SimpleBlobDetector;
-import org.opencv.features2d.SimpleBlobDetector_Params;
 import org.opencv.imgproc.Imgproc;
-import org.opencv.calib3d.*;
+import org.opencv.imgproc.Moments;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static org.opencv.core.Core.perspectiveTransform;
+import static org.firstinspires.ftc.teamcode.vision.TeamPropDetector.AllianceColor.*;
+import static org.firstinspires.ftc.teamcode.vision.TeamPropDetector.RandomizationPosition.*;
 
-public class SpikeMarkDetector implements VisionProcessor {
+
+public class TeamPropDetector implements VisionProcessor {
+
+    public enum AllianceColor { RED, BLUE, UNKNOWN }
+    public enum RandomizationPosition { LEFT, CENTER, RIGHT, UNKNOWN }
 
     private int frame_width, frame_height;
 
     // which vertical percentage of the image to analyze
-    private static final int VIEW_STARTING_Y_PERCENT = 25;
-    private static final int VIEW_ENDING_Y_PERCENT = 70;
+    private static final int VIEW_STARTING_Y_PERCENT = 10;
+    private static final int VIEW_ENDING_Y_PERCENT = 65;
 
     // A copy of the telemetry object to sending messages
     // These messages can be seen in the EOVCSim program that
@@ -67,13 +64,17 @@ public class SpikeMarkDetector implements VisionProcessor {
     public int minThreshold = 137;   // Minimum level of red/blue to accept (0-255)
     public int maxThreshold = 255;   // Maximum level of red/blue to accept (0-255)
     public int minBCArea = 1000;     // Minimum area of pixels accepted for a barcode square
-    public int  maxBCArea = 10000;    // Maximum area of pixels for a barcode square
+    public int  maxBCArea = 20000;    // Maximum area of pixels for a barcode square
     public int maxBCSides = 10;  // Maximum sides allow for a barcode square
+    public int maxSpikeArea = 4500;
     public int minSUArea = 900;    // Minimum area of pixel for piece of storage unit
     public int maxSUArea = 7000;   // Maximum area of pixels for a piece of storage unit
     public double epsilon = 3;
     public int minSUSides = 4;    // Minimum sides for a piece of storage unit
     public int maxSUSides = 12;     // Maximum sides for a piece of storage unti
+
+    public RandomizationPosition randomizationPosition = RandomizationPosition.UNKNOWN;  // 0, 1, 2
+    public AllianceColor allianceColor = AllianceColor.UNKNOWN;
 
     public boolean saveFrame = false;   // if set true, save frame and reset to false
     // These variables hold different version of the image from the camera
@@ -99,12 +100,18 @@ public class SpikeMarkDetector implements VisionProcessor {
     private int signalX;
     private int signalY;
 
+    public boolean backstageSide = false;
+
+    private int leftMostXCenter;
+    private int propXCenter;
+    private int shapeCount;
+
     public class VisionResult {
         int shapes = 0;
         String message = "";
     }
 
-    public SpikeMarkDetector(Telemetry telemetry) {
+    public TeamPropDetector(Telemetry telemetry) {
         this.telemetry = telemetry;
 
         // Create all the Mat() object to hold the different images
@@ -161,7 +168,7 @@ public class SpikeMarkDetector implements VisionProcessor {
     }
 
     /**
-     * Check one shape (contour) to see if it is a barcode square or a piece of the storage unit.
+     * Check one shape (contour) to see if is it within the ait is a barcode square or a piece of the storage unit.
      *
      * @param contour
      * @return  True if the contour seems to be a barcode square
@@ -187,7 +194,10 @@ public class SpikeMarkDetector implements VisionProcessor {
         // get area of the poly
 
         poly.fromArray( poly2f.toArray() );
+
+
         int area = (int)Imgproc.contourArea(contour);
+
 
         // These lines can be uncommented when debugging
         // Log.i("PIPELINE", "contour area="+area+", sides=" + sideCount);
@@ -204,70 +214,49 @@ public class SpikeMarkDetector implements VisionProcessor {
         bRet = bRet && (area >= minBCArea && area <= maxBCArea);
 
 
-        telemetry.addData("Shape" + (bRet ? " **" : " xx"), "area="+area+", sides=" + sideCount);
+        if (bRet) {
+            shapeCount++;
+            Moments m = Imgproc.moments(contour);
+            int centerX = (int) (m.m10 / m.m00);
+            int centerY = (int) (m.m01 / m.m00);
 
-        //    if ( ( r.x < 2)   // shape is against left side
-        //         || ( (r.x + r.width) > (imageWidth - 2) ) )  // or shape against right side
-        //        return false;
+            if (centerX < leftMostXCenter) leftMostXCenter = centerX;
 
-        // Check if the shape has the right amount of sides for a barcode square
-        if (bRet && sideCount > 3 && sideCount <= maxBCSides ) {
+            Point ctr = new Point(centerX, centerY);
+            Imgproc.drawMarker(input, ctr, new Scalar(0, 255, 255));
+            telemetry.addData("Shape", "area=" + area + " center=" + centerX + "," + centerY); // +", sides=" + sideCount);
 
-            // Uncomment this for debugging to draw the contour we are
-            // examining onto the image
-            List<MatOfPoint> polyPoints = new ArrayList<>();
-            polyPoints.add(new MatOfPoint(poly2f.toArray() ) );
 
-            Imgproc.drawContours(input, polyPoints, -1, new Scalar(255, 255, 0), 2);
+            //    if ( ( r.x < 2)   // shape is against left side
+            //         || ( (r.x + r.width) > (imageWidth - 2) ) )  // or shape against right side
+            //        return false;
 
-            // FIND MOST TOP RIGHT THREE POINTS OF SHAPE
-            // sort all points by distance from top right corner
-            // select top three
-            Point[] points = poly2f.toArray();
+            // Check if the shape has the right amount of sides for a barcode square
+            if (area > maxSpikeArea) {
 
-            List<Point> lp =
-                    Arrays.stream(points).sorted(new Comparator<Point>() {
-                        @Override
-                        public int compare(Point point, Point t1) {
-                            // distance from top right
-                            return (int) Math.signum( Math.hypot( imageWidth - point.x, point.y)
-                                    - Math.hypot( imageWidth - t1.x, t1.y) );
+                // Uncomment this for debugging to draw the contour we are
+                // examining onto the image
+                List<MatOfPoint> polyPoints = new ArrayList<>();
+                polyPoints.add(new MatOfPoint(poly2f.toArray()));
 
-                        }
-                    }).collect(Collectors.toList());
+                Imgproc.drawContours(input, polyPoints, -1, new Scalar(255, 255, 0), 2);
 
-/*
-            int pc = 3;
-            for( Point pt : lp) {
-                telemetry.addData("Point", pt.x + "," + pt.y);
-                if (pc-- > 0) {
-                    Imgproc.drawMarker( input, pt, new Scalar(255, 255, 0));
-                }
+                signalFound = true;
+                propXCenter = centerX;
+
+                //  signalX = (int)ctr.x;
+                //  signalY = (int)ctr.y;
+
+                telemetry.addData("Prop at", ctr.x + "," + ctr.y);
+
+                // And if there are the right amount of sides, then
+                // accept the item as a barcode square if the area
+                // is also within range
+
+                // Return true is the area is within range, or false if not
+                bRet = true;
+
             }
-*/
-
-            // get center point between 2nd and 3rd point
-            Point p1 = lp.get(1);
-            Point p2 = lp.get(2);
-            Point ctr =
-                    new Point(
-                            Math.min(p1.x, p2.x ) +  Math.abs( p1.x - p2.x) / 2,
-                            Math.min(p1.y, p2.y) + Math.abs( p1.y - p2.y) /2
-                    );
-            Imgproc.drawMarker( input, ctr, new Scalar(0, 255, 255));
-            signalFound = true;
-            signalX = (int)ctr.x;
-            signalY = (int)ctr.y;
-
-            telemetry.addData("Signal at", ctr.x + "," + ctr.y);
-
-            // And if there are the right amount of sides, then
-            // accept the item as a barcode square if the area
-            // is also within range
-
-            // Return true is the area is within range, or false if not
-            bRet = true;
-
         }
 
         contour2f.release();
@@ -305,14 +294,12 @@ public class SpikeMarkDetector implements VisionProcessor {
             r.height = matYCrCb.height() - maxY;
             Imgproc.rectangle(matYCrCb, r, new Scalar(0, 0, 0), Imgproc.FILLED);
 
-
         Core.extractChannel(matYCrCb, redChannel, 1);
         Core.extractChannel(matYCrCb, blueChannel, 2);
-        Core.extractChannel(matYCrCb, lumaChannel, 0);
+       // Core.extractChannel(matYCrCb, lumaChannel, 0);
 
-             Imgproc.threshold(redChannel, redThreshold, minThreshold, maxThreshold, Imgproc.THRESH_BINARY);
-
-       //      redThreshold.copyTo(frame);
+        Imgproc.threshold(redChannel, redThreshold, minThreshold, maxThreshold, Imgproc.THRESH_BINARY);
+        Imgproc.threshold(blueChannel, blueThreshold, minThreshold, maxThreshold, Imgproc.THRESH_BINARY);
 
 
         blueContours.clear();
@@ -322,36 +309,48 @@ public class SpikeMarkDetector implements VisionProcessor {
 
 
         Imgproc.drawContours(frame, redContours, -1, new Scalar(0, 55, 255), 1);
+        Imgproc.drawContours(frame, blueContours, -1, new Scalar(255, 55, 0), 1);
 
 
-        //    blueContours = blueContours.stream().filter(i -> filterContours(i)).collect(Collectors.toList());
+        allianceColor = AllianceColor.UNKNOWN;
+        leftMostXCenter = 999;
+        propXCenter = 0;
+        shapeCount = 0;
+        blueContours = blueContours.stream().filter(i -> filterContours(frame, i)).collect(Collectors.toList());
+        if (shapeCount == 2) {
+            allianceColor = BLUE;
+        } else {
+            // not blue so try red..
+            leftMostXCenter = 999;
+            shapeCount = 0;
+            propXCenter = 0;
+            redContours = redContours.stream().filter(i -> filterContours(frame, i)).collect(Collectors.toList());
+            if (shapeCount == 2) allianceColor = RED;
+        }
 
-        // same for red..
-        redContours = redContours.stream().filter(i -> filterContours(frame, i)).collect(Collectors.toList());
+        // if objects are to left of frame and red, or not to left of frame and blue
+        // then we are on the backstage side.
+        backstageSide = (leftMostXCenter < 150) == (allianceColor == RED);
 
-     //   Imgproc.drawContours(frame, redContours, -1, new Scalar(255, 255, 0));
+        // Determine randomization position
+        randomizationPosition = RandomizationPosition.UNKNOWN;
+        if (allianceColor != AllianceColor.UNKNOWN) {
+            if (propXCenter == 0) randomizationPosition = LEFT;
+            else randomizationPosition = (propXCenter == leftMostXCenter) ? CENTER : RIGHT;
+        }
 
-        //  redThreshold.copyTo(frame);
-  //     if (1 == 1) { telemetry.update(); return null; }
-
+        telemetry.addData("Team", allianceColor);
+        telemetry.addData("Randomization", randomizationPosition);
+        telemetry.addData("Backstage Side", backstageSide ? "YES" : "NO");
         telemetry.update();
 
         VisionResult vr = new VisionResult();
         vr.shapes = 3;
-        vr.message = "Hello";
+        vr.message = "";
         return vr;
     }
 
     @Override
     public void onDrawFrame(Canvas canvas, int onscreenWidth, int onscreenHeight, float scaleBmpPxToCanvasPx, float scaleCanvasDensity, Object userContext) {
-        Paint paint = new Paint();
-
-        paint.setColor(Color.YELLOW);
-        paint.setStrokeWidth(5);
-        paint.setTextSize(20);
-
-        canvas.drawLine(0, minY* scaleBmpPxToCanvasPx, onscreenWidth, minY* scaleBmpPxToCanvasPx, paint);
-        canvas.drawLine(0, maxY * scaleBmpPxToCanvasPx -1, onscreenWidth, maxY * scaleBmpPxToCanvasPx -1, paint);
-        canvas.drawText( ((VisionResult)userContext).message, 150, 50, paint);
     }
 }

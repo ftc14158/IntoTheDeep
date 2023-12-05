@@ -15,6 +15,10 @@ import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.teamcode.RobotContainer;
+import org.firstinspires.ftc.teamcode.subsystems.mechanism.SlideController;
+import org.firstinspires.ftc.teamcode.subsystems.mechanism.WristController;
+
+import static com.arcrobotics.ftclib.util.MathUtils.clamp;
 
 /**
  * Subsystem that operates the robot arm. The aim of this subsystem is to position the arm at either
@@ -39,21 +43,22 @@ public class ArmSubsystem extends SubsystemBase {
     private MotorEx elbowMotor1;
     // private MotorEx elbowMotor2;
 
-    private MotorEx slideMotor;
-    private arm_mode slideMode;
+//    private MotorEx slideMotor;
+//    private arm_mode slideMode;
 
     // potVoltage top 0.833v
     // bottom 2.55v,
     private AnalogInput elbowAngle;
 
-    private MotorEx wristMotor;
+    //private MotorEx wristMotor;
 
     private Servo grabServo;
 
     private RobotContainer m_robot;
 
     private arm_mode m_mode;
-    private arm_mode wristMode;
+
+    // private arm_mode wristMode;
 
     private int m_iTargetPosition = 0;
 
@@ -63,14 +68,14 @@ public class ArmSubsystem extends SubsystemBase {
     // so ArmFeedForward used instead for the feed forward calc
     private PIDController m_PController;
 
-    private PIDController m_slidePIDController;
+//    private PIDController m_slidePIDController;
 
     private int lastPosition = 0;
-    private int lastSlidePosition = 0;
+//    private int lastSlidePosition = 0;
 
-    private int lastWristPosition = 0;
-    private int lastWristSteady = 0;
-    private int wristHomePosition = 0;
+    private WristController m_wristController;
+
+    private SlideController m_slideController;
 
     private String lastMsg = "";
     private int iSteady;
@@ -84,12 +89,15 @@ public class ArmSubsystem extends SubsystemBase {
 
         m_PController = new PController(1);
         m_positionController = new ArmFeedforward( .1, .1, 0 );
-        m_slidePIDController = new PIDController(ArmConstants.SLIDE_KP, ArmConstants.SLIDE_KI, 0);
+//        m_slidePIDController = new PIDController(ArmConstants.SLIDE_KP, ArmConstants.SLIDE_KI, 0);
 
         elbowMotor1 = new MotorEx(hardwareMap, ArmConstants.ELBOW_MOTOR1);
         // elbowMotor2 = new MotorEx(hardwareMap, ArmConstants.ELBOW_MOTOR2);
-        slideMotor = new MotorEx(hardwareMap, ArmConstants.SLIDE_MOTOR);
-        wristMotor = new MotorEx(hardwareMap, ArmConstants.WRIST_MOTOR);
+        //        slideMotor = new MotorEx(hardwareMap, ArmConstants.SLIDE_MOTOR);
+    //    wristMotor = new MotorEx(hardwareMap, ArmConstants.WRIST_MOTOR);
+
+        m_wristController = new WristController(hardwareMap);
+        m_slideController = new SlideController(hardwareMap);
 
         elbowAngle = hardwareMap.analogInput.get("elbowAngle");
         grabServo = hardwareMap.get(Servo.class, "grab");
@@ -108,22 +116,18 @@ public class ArmSubsystem extends SubsystemBase {
         elbowMotor2.setRunMode(Motor.RunMode.RawPower);
         elbowMotor2.setDistancePerPulse(1);
         elbowMotor2.setPositionCoefficient( 0 ); // .02 );
-*/
+
         slideMotor.setZeroPowerBehavior(Motor.ZeroPowerBehavior.FLOAT);
         slideMotor.setInverted(true);
         slideMotor.setRunMode(Motor.RunMode.RawPower);
         slideMotor.set(0);
         slideMode = arm_mode.IDLE;
         slideMotor.resetEncoder();
-
+*/
         m_mode = arm_mode.IDLE;
         iSteady = 0;
 
-        wristMotor.stopMotor();
-        wristMotor.setZeroPowerBehavior(Motor.ZeroPowerBehavior.FLOAT);
-        wristMotor.setRunMode(Motor.RunMode.RawPower);
-        wristMode = arm_mode.RETURNING_TO_HOME;
-
+        setWristPositionLevel(0);
 
     }
 
@@ -135,7 +139,6 @@ public class ArmSubsystem extends SubsystemBase {
      * @param position  The position to move arm to (in encoder ticks)
      */
     public void goToPosition(int position) {
-
 
         lastTimeStamp = 0;
         m_PController.setPID(ArmConstants.ARM_KP, ArmConstants.ARM_KI, ArmConstants.ARM_KD );
@@ -154,24 +157,24 @@ public class ArmSubsystem extends SubsystemBase {
 
     @Override
     public void periodic() {
-        int currentPosition = (int)(((2.55 - elbowAngle.getVoltage()) * 500.)); //   elbowMotor1.getCurrentPosition();
+        double elbowVolts = elbowAngle.getVoltage();
+        int currentPosition = (int)(((2.55 - elbowVolts) * 500.)); //   elbowMotor1.getCurrentPosition();
 
-        int currentSlidePosition = slideMotor.getCurrentPosition();
-        int slidePositionDiff = currentSlidePosition - lastSlidePosition;
-        lastSlidePosition = currentSlidePosition;
+//        int currentSlidePosition = slideMotor.getCurrentPosition();
+        m_slideController.update();
+        m_wristController.update();
 
-        int currentWristPosition = wristMotor.getCurrentPosition();
+//        int slidePositionDiff = currentSlidePosition - lastSlidePosition;
+//        lastSlidePosition = currentSlidePosition;
 
-        m_robot.addTelem("Pot voltage", elbowAngle.getVoltage());
+        m_robot.addTelem("Pot voltage", elbowVolts);
 
-        m_robot.addTelem("Slide pos", currentSlidePosition);
-        double slideerror = 0;
-        double slidepower = 0;
 
-        m_robot.addTelem("Wrist position", wristMotor.getCurrentPosition());
-        m_robot.addTelem("Wrist home", wristHomePosition);
-        m_robot.addTelem("Wrist power", wristMotor.get());
-        m_robot.addTelem("Wrist mode", wristMode);
+//        m_robot.addTelem("Slide pos", currentSlidePosition);
+//        double slideerror = 0;
+//        double slidepower = 0;
+
+
 
         String msg = "";
         // max gravity should be when cos(position in radians) = 1
@@ -205,6 +208,10 @@ public class ArmSubsystem extends SubsystemBase {
         //double accelRads = accel * ArmConstants.ARM_POS_TO_RADS;
         double velRads = vel * ArmConstants.ARM_POS_TO_RADS;
 
+
+//        m_wristController.debugInfo().forEach( (k,v) -> m_robot.addTelem(k,v) );
+        m_slideController.debugInfo().forEach( (k,v) -> m_robot.addTelem(k,v) );
+
         m_robot.addTelem("Arm Pos", currentPosition);
         m_robot.addTelem("Arm Pos Deg", Math.toDegrees(currentPositionRadians) );
         m_robot.addTelem("Arm Mode", m_mode);
@@ -223,13 +230,13 @@ public class ArmSubsystem extends SubsystemBase {
 
                 double ff_error =  m_positionController.calculate(currentPositionRadians, velRads);
                 // increase kcos error based on slide length
-                ff_error += ( (ArmConstants.ARM_KCOS_EXT * currentSlidePosition) * Math.cos(currentPositionRadians) );
+                ff_error += ( (ArmConstants.ARM_KCOS_EXT * m_slideController.currentPosition()) * Math.cos(currentPositionRadians) );
 
                 if (DEBUG) msg = ", vel = " + vel + ", p error = " + p_error + ", ff = " + ff_error;
                 m_robot.addTelem("ArmPID Vel rad/sec", vel );
                 m_robot.addTelem("ArmPID Error", p_error );
                 m_robot.addTelem("ArmFF", ff_error);
-                if (m_mode == arm_mode.RETURNING_TO_HOME && currentPosition < 100) {
+                if (m_mode == arm_mode.RETURNING_TO_HOME && currentPosition < 50) {
                     // close to home, so drop the rest of the way with gravity
                     setElbowPower(0);
                     m_mode = arm_mode.SETTLING_HOME;
@@ -255,7 +262,6 @@ public class ArmSubsystem extends SubsystemBase {
                 if (iSteady > 4) {
                     if (iSteady == 5) {
                         elbowMotor1.resetEncoder();
-      //                  elbowMotor2.resetEncoder();
                         m_mode = arm_mode.IDLE;
                     }
                     iSteady = 6;
@@ -266,10 +272,8 @@ public class ArmSubsystem extends SubsystemBase {
                 // in idle mode,
                 iSteady = 0;
 
-    //                currentPosition = armMotor.getCurrentPosition();
         }
 
-//        m_telemetry.addData("Arm Position", armMotor.getCurrentPosition());
         if (DEBUG) {
             msg =
                     "Position = "
@@ -285,62 +289,7 @@ public class ArmSubsystem extends SubsystemBase {
                 Log.i("ARM", msg);
             }
         }
-
-        switch(slideMode) {
-            case POSITIONING:
-                // if at position
-                if ( (slidePositionDiff < 2) && Math.abs( currentSlidePosition - m_slidePIDController.getSetPoint() ) < ArmConstants.SLIDE_TOLERANCE ) {
-                    // slideMotor.atTargetPosition()) {
-                    slideMotor.stopMotor();
-                    slideMode = arm_mode.IDLE;
-                } else {
-                    slideerror = m_slidePIDController.calculate( currentSlidePosition );
-                    slidepower = slideerror * ArmConstants.SLIDE_POWER_SIGN;
-                    slideMotor.set(slidepower);
-                }
-                break;
-            case IDLE:
-                slideerror =0;
-                slidepower = 0;
-                slideMotor.stopMotor();
-                slideMotor.setRunMode(Motor.RunMode.RawPower);
-
-        }
-//        m_robot.addTelem("Elbow Power", elbowMotor1.get());
-
-        // Wrist motor control
-        switch(wristMode) {
-            case RETURNING_TO_HOME:
-                wristMotor.set(-ArmConstants.WRIST_DRIVE_SIGN);  // keep motor on upwards
-                if (currentWristPosition != lastWristPosition) {
-                    lastWristSteady = 0;
-                } else {
-                    lastWristSteady++;
-                    if (lastWristSteady > 10) {
-                        // we have found the uppermost position
-                        wristHomePosition = currentWristPosition;
-                        wristMode = arm_mode.POSITIONING;
-                        wristMotor.setRunMode(Motor.RunMode.PositionControl);
-                        wristMotor.setTargetPosition( wristHomePosition + (int)ArmConstants.WRIST_POS0 );
-                    }
-                }
-
-            case POSITIONING:
-                wristMotor.setPositionCoefficient(ArmConstants.WRIST_KP);
-                wristMotor.set(ArmConstants.WRIST_DRIVE_SIGN);
-                break;
-
-            case IDLE:
-                wristMotor.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE);
-                wristMotor.set(0);
-
-        }
-
-        m_robot.addTelem("Slide setpoint", m_slidePIDController.getSetPoint());
-        m_robot.addTelem("Slide error", slideerror);
-        m_robot.addTelem("Slide power", slidepower);
         lastPosition = currentPosition;
-        lastWristPosition = currentWristPosition;
     }
 
     public int getPosition() {
@@ -370,12 +319,12 @@ public class ArmSubsystem extends SubsystemBase {
     }
 
     public void stopSlide() {
-        slideMode = arm_mode.IDLE;
-        slideMotor.stopMotor();
+        m_slideController.stop();
     }
 
     public void setSlidePower(double power) {
-        if (slideMode == arm_mode.IDLE) slideMotor.set(power);
+        m_slideController.setPower(power);
+//        if (slideMode == arm_mode.IDLE) slideMotor.set(power);
 //        m_robot.addTelem("Slide power", power);
 
     }
@@ -421,9 +370,13 @@ public class ArmSubsystem extends SubsystemBase {
     public void nudgePosition(int amount) {
         if (m_mode == arm_mode.POSITIONING) {
             m_iTargetPosition += amount;
-            if (m_iTargetPosition < 0) m_iTargetPosition = 0;
+            m_iTargetPosition = clamp(m_iTargetPosition, 0, 800);
             goToPosition(m_iTargetPosition);
         }
+    }
+
+    public void hoist() {
+        m_slideController.hoist();
     }
 
     private void setGrabServo(double angle) {
@@ -443,7 +396,8 @@ public class ArmSubsystem extends SubsystemBase {
     }
 
     public void setSlidePosition(double position) {
-        Log.i("ARM SLIDE", "Pos " + position);
+        m_slideController.setController(position);
+/*        Log.i("ARM SLIDE", "Pos " + position);
         // slideMotor.stopMotor();
         m_slidePIDController.setPID(ArmConstants.SLIDE_KP, ArmConstants.SLIDE_KI, ArmConstants.SLIDE_KD);
         m_slidePIDController.setSetPoint(position);
@@ -453,32 +407,41 @@ public class ArmSubsystem extends SubsystemBase {
        // slideMotor.
        // slideMotor.setTargetPosition((int)position);
         slideMode = arm_mode.POSITIONING;
+ */
     }
 
     public boolean slideBusy() {
-        return slideMode != arm_mode.IDLE;
+        return m_slideController.busy();
     }
 
     public boolean slideIdle() {
-        return !slideBusy();
+        return m_slideController.idle();
     }
 
     public boolean slideCloseToPos() {
-        return (slideIdle()) || (( Math.abs( m_slidePIDController.getSetPoint() - lastSlidePosition)) < 100 );
-    }
-    public void nudgeSlidePosition(double delta) {
-        setSlidePosition( slideMotor.getCurrentPosition() + delta );
+        return m_slideController.closeToPos();
     }
 
-    public void setWristPower(double power) {
-        wristMotor.set(power);
+    public void nudgeSlidePosition(double delta) {
+        m_slideController.nudgePosition(delta);
+    }
+
+    public void homeSlide() {
+        m_slideController.returnToHome();
     }
 
     public void setWristPositionLevel(int level) {
         if (level == 0) {
-            wristMotor.setTargetPosition(wristHomePosition + ((int)ArmConstants.WRIST_POS0));
+            m_wristController.setRelativeAngle(ArmConstants.WRIST_POS0);
         } else if (level == 1) {
-            wristMotor.setTargetPosition(wristHomePosition + ((int)ArmConstants.WRIST_POS1));
+            m_wristController.setRelativeAngle(ArmConstants.WRIST_POS1);
+        } else if (level == 2) {
+            m_wristController.setRelativeAngle(ArmConstants.WRIST_POS2);
         }
+
+    }
+
+    public void setWristRelativeAngle(double angle) {
+        m_wristController.setRelativeAngle(angle);
     }
 }

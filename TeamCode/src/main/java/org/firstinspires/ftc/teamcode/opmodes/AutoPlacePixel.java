@@ -36,7 +36,7 @@ public class AutoPlacePixel extends CommandOpMode {
 
         // Create the main robot object that contains the various
         // subsystems etc
-        m_robot = new RobotContainer( true, hardwareMap,
+        m_robot = new RobotContainer( true, hardwareMap, telemetry,
                 gamepad1, gamepad2, new Pose2d(-39,-62.125, Math.toRadians(90)));
 
         // Create a command that will run every time in the loop to send back the telemetry to

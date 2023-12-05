@@ -11,12 +11,18 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import org.firstinspires.ftc.teamcode.RobotContainer;
 import org.firstinspires.ftc.teamcode.subsystems.ArmConstants;
 import org.firstinspires.ftc.teamcode.subsystems.ArmSubsystem;
+import org.firstinspires.ftc.teamcode.subsystems.MechanismMode;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import static org.firstinspires.ftc.teamcode.subsystems.MechanismMode.*;
 
 /** Class to control the arm wrist, used by the arm subsystem
  *
  */
 public class WristController {
-    private AnalogInput anglePot;
+    private RevPotentiometer anglePot;
     private MotorEx motor;
 
     private PIDFController controller = null;
@@ -26,13 +32,13 @@ public class WristController {
     private double lastError = 0;
     private double setPoint = 0;
 
-    private boolean idle = true;
+    private MechanismMode mode = IDLE;
 
     public WristController(HardwareMap hardwareMap) {
-        idle = true;
+        mode = IDLE;
 
         motor = new MotorEx(hardwareMap, ArmConstants.WRIST_MOTOR);
-        anglePot = hardwareMap.analogInput.get( ArmConstants.WRIST_POTENTIOMETER );
+        anglePot = new RevPotentiometer(hardwareMap.analogInput.get( ArmConstants.WRIST_POTENTIOMETER ));
 
         motor.stopMotor();
         motor.setInverted(true);
@@ -43,31 +49,15 @@ public class WristController {
 
     }
 
-    /**
-     * Calculate voltage expected for a given pot taper angle
-     * @param degrees
-     * @return Expected voltage
-     */
-    private double angleToVoltage(double degrees) {
-        // Taken from REV applications document https://docs.revrobotics.com/potentiometer/untitled-1
-        return (445d * (degrees - 270d)) / (Math.pow(degrees,2) - 270d*degrees - 36450d );
-    }
-
-    private double voltageToAngle(double voltage) {
-        if (voltage > 0)
-            return ( ( (2700d*voltage) + 4455d - Math.sqrt(21870000d*Math.pow(voltage,2) - 24057000d*voltage + 19847025d ) ) / (20d*voltage) );
-        else return 0;
-    }
-
     public void update() {
-        anglePotVoltage = anglePot.getVoltage();
+        anglePot.update();  // read the current actual value
 
         // apply controller
-        if (idle) {
+        if (mode == IDLE) {
             lastError = 0;
             motor.stopMotor();
         } else {
-            double error = controller.calculate(anglePotVoltage);
+            double error = controller.calculate(anglePot.getVoltage());
             error = com.arcrobotics.ftclib.util.MathUtils.clamp(error, -1.0, 1.0);
             lastError = error;
             motor.set(ArmConstants.WRIST_DRIVE_SIGN * error);
@@ -82,12 +72,11 @@ public class WristController {
      */
 
     public double angle() {
-        return voltageToAngle(anglePotVoltage);
+        return anglePot.getDegrees();
     }
 
-
     public double voltage() {
-        return anglePotVoltage;
+        return anglePot.getVoltage();
     }
 
     public double error() {
@@ -98,7 +87,7 @@ public class WristController {
 
     public boolean inPosition() {
 
-        return idle || ( Math.abs( voltageToAngle(setPoint) - voltageToAngle(anglePotVoltage) ) < ArmConstants.WRIST_DEGREES_TOLERANCE );
+        return (mode == IDLE) || ( Math.abs( RevPotentiometer.voltageToAngle(setPoint) - angle() ) < ArmConstants.WRIST_DEGREES_TOLERANCE );
     }
 
     /**
@@ -106,20 +95,29 @@ public class WristController {
      * @param angleDegrees
      */
     private void setController(double angleDegrees) {
-        Log.i("***WRIST***", "Set angle " + angleDegrees);
-        setPoint = angleToVoltage( angleDegrees );
+        setPoint = RevPotentiometer.degreesToVoltage( angleDegrees );
         controller.setPIDF(ArmConstants.WRIST_KP, ArmConstants.WRIST_KI, ArmConstants.WRIST_KD, ArmConstants.WRIST_KF);
-        controller.setSetPoint( angleToVoltage(angleDegrees) );
-        idle = false;
+        controller.setSetPoint( RevPotentiometer.degreesToVoltage( angleDegrees) );
+        mode = POSITIONING;
     }
 
     public void setRelativeAngle(double angleDegrees) {
 
         setController( ArmConstants.WRIST_POT_LEVEL_ANGLE_DEGREES + angleDegrees );
-        idle = false;
     }
 
     public void stop() {
-        idle = true;
+        mode = IDLE;
+    }
+
+    public Map<String, Object> debugInfo() {
+        Map<String, Object> data = new HashMap<String, Object>();
+
+        data.put("Mode", mode);
+        data.put("Angle", angle() );
+        data.put("Voltage", voltage());
+        data.put("Error", error() );
+        data.put("Setpoint", setPoint());
+        return data;
     }
 }
