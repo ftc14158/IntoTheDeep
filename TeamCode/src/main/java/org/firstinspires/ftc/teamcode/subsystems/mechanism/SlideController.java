@@ -10,6 +10,7 @@ import com.qualcomm.robotcore.hardware.TouchSensor;
 
 import org.firstinspires.ftc.teamcode.subsystems.ArmConstants;
 import org.firstinspires.ftc.teamcode.subsystems.MechanismMode;
+import org.firstinspires.ftc.teamcode.subsystems.SlideConstants;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -37,7 +38,7 @@ public class SlideController {
     public SlideController(HardwareMap hardwareMap) {
         motor = new MotorEx(hardwareMap, ArmConstants.SLIDE_MOTOR);
         limit = hardwareMap.get(TouchSensor.class, ArmConstants.SLIDE_LIMIT_SWITCH);
-        controller = new PIDController(ArmConstants.SLIDE_KP, ArmConstants.SLIDE_KI, 0);
+        controller = new PIDController(SlideConstants.SLIDE_KP, SlideConstants.SLIDE_KI, 0);
 
         motor.setZeroPowerBehavior(Motor.ZeroPowerBehavior.FLOAT);
         motor.setInverted(true);
@@ -71,14 +72,14 @@ public class SlideController {
                 if ((controller.getSetPoint() > currentPosition) || (!limitCheck())) {
                     // if very little movement since last check (less than 2 ticks), and position is without
                     // tolerance of desired, then stop motor and go to IDLE
-                    if ((positionDiff < 2) && Math.abs(currentPosition - controller.getSetPoint()) < ArmConstants.SLIDE_TOLERANCE) {
+                    if ((positionDiff < 2) && Math.abs(currentPosition - controller.getSetPoint()) < SlideConstants.SLIDE_TOLERANCE) {
                         // slideMotor.atTargetPosition()) {
                         motor.stopMotor();
                         mode = IDLE;
                     } else {
                         error = controller.calculate(currentPosition);
                         error = clamp(error, -1.0, 1.0);
-                        power = error * ArmConstants.SLIDE_POWER_SIGN;
+                        power = error * SlideConstants.SLIDE_POWER_SIGN;
                         motor.set(power);
                     }
                 }
@@ -88,7 +89,7 @@ public class SlideController {
                 if (!limitCheck()) {
                     // run motor in reverse until limit
                     error = 0;
-                    power =  -Math.signum(ArmConstants.SLIDE_POWER_SIGN) * ArmConstants.SLIDE_HOME_POWER;
+                    power =  -Math.signum(SlideConstants.SLIDE_POWER_SIGN) * SlideConstants.SLIDE_HOME_POWER;
                     motor.set( power );
                 }
                 break;
@@ -96,9 +97,9 @@ public class SlideController {
             case SETTLING_HOME:
                 if (!limitCheck() ) {
                     if (currentPosition > 300) {
-                        motor.set(-Math.signum(ArmConstants.SLIDE_POWER_SIGN) * Math.signum(ArmConstants.SLIDE_HOIST_POWER));
+                        motor.set(-Math.signum(SlideConstants.SLIDE_POWER_SIGN) * Math.signum(SlideConstants.SLIDE_HOIST_POWER));
                     } else {
-                            motor.set(-Math.signum(ArmConstants.SLIDE_POWER_SIGN) * ArmConstants.SLIDE_HOME_POWER);
+                            motor.set(-Math.signum(SlideConstants.SLIDE_POWER_SIGN) * SlideConstants.SLIDE_HOME_POWER);
                         }
                     }
                 break;
@@ -130,7 +131,7 @@ public class SlideController {
 
     public void setController(double position) {
         Log.i("ARM SLIDE", "Pos " + position);
-        controller.setPID(ArmConstants.SLIDE_KP, ArmConstants.SLIDE_KI, ArmConstants.SLIDE_KD);
+        controller.setPID(SlideConstants.SLIDE_KP, SlideConstants.SLIDE_KI, SlideConstants.SLIDE_KD);
         controller.setSetPoint(position);
         motor.setRunMode(Motor.RunMode.RawPower);
         mode = POSITIONING;
@@ -152,7 +153,7 @@ public class SlideController {
         return (idle()) || (( Math.abs( controller.getSetPoint() - lastPosition)) < 100 );
     }
     public void nudgePosition(double delta) {
-        setController( clamp( currentPosition + delta, 50, ArmConstants.SLIDE_MAX)  );
+        setController( clamp( currentPosition + delta, 50, SlideConstants.SLIDE_MAX)  );
     }
 
     public Map<String, Object> debugInfo() {

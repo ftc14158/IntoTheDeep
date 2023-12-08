@@ -24,7 +24,7 @@ public class ArmControllerCommand extends CommandBase {
         @Override
         public void execute() {
             // arm.setWristPower(leftY.getAsDouble());
-            arm.setSlidePower(rightY.getAsDouble());
+//            arm.setSlidePower(rightY.getAsDouble());
         }
 
 

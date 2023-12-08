@@ -4,8 +4,8 @@ import com.arcrobotics.ftclib.command.InstantCommand;
 import com.arcrobotics.ftclib.command.SequentialCommandGroup;
 import com.arcrobotics.ftclib.command.WaitUntilCommand;
 
-import org.firstinspires.ftc.teamcode.subsystems.ArmConstants;
 import org.firstinspires.ftc.teamcode.subsystems.ArmSubsystem;
+import org.firstinspires.ftc.teamcode.subsystems.SlideConstants;
 
 public class ArmStartPositionCommand extends SequentialCommandGroup {
 
@@ -16,7 +16,7 @@ public class ArmStartPositionCommand extends SequentialCommandGroup {
 
         addCommands(
                 // Retract slide first
-                new InstantCommand( () -> { arm.setSlidePosition(ArmConstants.SLIDE_CRUISE);}),
+                new InstantCommand( () -> { arm.setSlidePosition(SlideConstants.SLIDE_CRUISE);}),
                 new WaitUntilCommand( arm::slideCloseToPos ),
                 // Then move to cruise level
                 new InstantCommand( () -> { arm.setWristPositionLevel(0);} ),

@@ -6,31 +6,29 @@ import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.arcrobotics.ftclib.command.Command;
-import com.arcrobotics.ftclib.command.CommandScheduler;
+import com.arcrobotics.ftclib.command.CommandOpMode;
 import com.arcrobotics.ftclib.command.InstantCommand;
 import com.arcrobotics.ftclib.command.RunCommand;
 import com.arcrobotics.ftclib.command.SequentialCommandGroup;
 import com.arcrobotics.ftclib.command.WaitUntilCommand;
 import com.arcrobotics.ftclib.gamepad.GamepadEx;
-import com.arcrobotics.ftclib.gamepad.GamepadKeys.Button;
 
+import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
-import org.firstinspires.ftc.robotcore.external.hardware.camera.BuiltinCameraDirection;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.teamcode.commands.ArmStartPositionCommand;
 import org.firstinspires.ftc.teamcode.commands.ArmToCruiseCommand;
 import org.firstinspires.ftc.teamcode.commands.ArmToGroundCommand;
-import org.firstinspires.ftc.teamcode.commands.MecanumDriveCommand;
 import org.firstinspires.ftc.teamcode.commands.TrajectoryBuildCommand;
 import org.firstinspires.ftc.teamcode.drive.SampleMecanumDrive;
 import org.firstinspires.ftc.teamcode.opmodes.AutonConstants;
-import org.firstinspires.ftc.teamcode.subsystems.ArmConstants;
 import org.firstinspires.ftc.teamcode.subsystems.ArmSubsystem;
 import org.firstinspires.ftc.teamcode.subsystems.DroneSubsystem;
 import org.firstinspires.ftc.teamcode.subsystems.MecanumDriveSubsystem;
+import org.firstinspires.ftc.teamcode.subsystems.SlideConstants;
 import org.firstinspires.ftc.teamcode.trajectorysequence.TrajectorySequence;
 import org.firstinspires.ftc.teamcode.trajectorysequence.TrajectorySequenceBuilder;
 import org.firstinspires.ftc.teamcode.vision.TeamPropDetector;
@@ -42,6 +40,9 @@ import java.util.Map;
 import java.util.function.Function;
 
 public class RobotContainer {
+
+    // The OpMode the robot is running
+    public CommandOpMode opMode;
 
     // Controller
     private final GamepadEx m_gamepad1;
@@ -67,33 +68,25 @@ public class RobotContainer {
 
     private HardwareMap hardwareMap;
 
-    public RobotContainer(boolean bTeleOp, HardwareMap hardwareMap, Telemetry telemetry, Gamepad gamepad1, Gamepad gamepad2,
-                          Pose2d startingPose) {
+    public RobotContainer(CommandOpMode opMode) {
 
-        this.telemetry = telemetry;
-        this.hardwareMap = hardwareMap;
+        this.telemetry = opMode.telemetry;
+        this.hardwareMap = opMode.hardwareMap;
         m_telemPacket = new TelemetryPacket();
         m_telemetryItems = new ArrayMap<String, Object>();
 
         m_drivetrain = new MecanumDriveSubsystem(new SampleMecanumDrive(hardwareMap, this), false);
+        m_drivetrain.getLocalizer().setPoseEstimate( PoseStorage.currentPose );
 
-        m_drivetrain.getLocalizer().setPoseEstimate(startingPose);
         // Bulks reads enabled in SampleMecanumDrive
 
-        m_gamepad1 = new GamepadEx(gamepad1);
-        m_gamepad2 = new GamepadEx(gamepad2);
+        m_gamepad1 = new GamepadEx(opMode.gamepad1);
+        m_gamepad2 = new GamepadEx(opMode.gamepad2);
 
         m_arm = new ArmSubsystem(hardwareMap, this);
         m_drone = new DroneSubsystem(hardwareMap, this);
 
-        if (bTeleOp) {
-  //          configureButtonBindings();
-            m_drivetrain.stop();
-
-        } else {
-            m_drivetrain.setDefaultCommand( new RunCommand( () -> { m_drivetrain.stop(); m_drivetrain.update(); } , m_drivetrain ) );
-
-        }
+        m_drivetrain.setDefaultCommand( new RunCommand( () -> { m_drivetrain.stop(); m_drivetrain.update(); } , m_drivetrain ) );
 
     }
 
@@ -223,14 +216,15 @@ public class RobotContainer {
         }
     }
 
-    public CommandBuilder commandBuilder() {
-        return new CommandBuilder(this);
+    public CommandFactory commandFactory() {
+        return new CommandFactory(this);
     }
 
-    public class CommandBuilder {
+    public class CommandFactory {
+
         private RobotContainer robot;
 
-        public CommandBuilder(RobotContainer robot) {
+        public CommandFactory(RobotContainer robot) {
             this.robot = robot;
         }
 
@@ -244,7 +238,6 @@ public class RobotContainer {
                     new WaitUntilCommand( () -> robot.getArm().slideIdle() )
             );
         }
-
 
         public Command armToCruise() {
             return new ArmToCruiseCommand(robot.getArm());
@@ -272,8 +265,16 @@ public class RobotContainer {
 
         public Command raiseOnePixelFromGround() {
             return new SequentialCommandGroup(
-                new InstantCommand(() -> { robot.getArm().setSlidePosition(ArmConstants.SLIDE_GROUND - ArmConstants.SLIDE_PIXEL_HEIGHT); } ),
+                new InstantCommand(() -> { robot.getArm().setSlidePosition(SlideConstants.SLIDE_GROUND - SlideConstants.SLIDE_PIXEL_HEIGHT); } ),
                 new WaitUntilCommand( () -> robot.getArm().slideCloseToPos() )
+            );
+        }
+
+        public Command armToAprilTagScanPosition() {
+            return new SequentialCommandGroup(
+                    new InstantCommand( () -> robot.getArm().goToPosition( AutonConstants.ARM_APRILTAGSCAN_POSITION) ),
+                    new InstantCommand( () -> { robot.getArm().setWristRelativeAngle(AutonConstants.WRIST_RELEASE_POSITION); } ),
+                    new InstantCommand( () -> { robot.getArm().setSlidePosition(AutonConstants.SLIDE_APRILTAGSCAN_POSITION );})
             );
         }
 

@@ -95,11 +95,14 @@ public class DriveConstants {
         return 32767 / ticksPerSecond;
     }
 
-    public static double JOYSTICK_MAXPOS_X_SLEWRATE = 1.2;
-    public static double JOYSTICK_MAXNEG_X_SLEWRATE = 3.0;
-    public static double JOYSTICK_MAXPOS_Y_SLEWRATE = 1.2;
-    public static double JOYSTICK_MAXNEG_Y_SLEWRATE = 3.0;
-    public static double JOYSTICK_MAXPOS_R_SLEWRATE = 1.2;
-    public static double JOYSTICK_MAXNEG_R_SLEWRATE = 3.0;
+    // Greater than 10 to disable
+    public static double JOYSTICK_MAXPOS_X_SLEWRATE = 99.0;
+    public static double JOYSTICK_MAXNEG_X_SLEWRATE = 99.0;
+    public static double JOYSTICK_MAXPOS_Y_SLEWRATE = 99.0;
+    public static double JOYSTICK_MAXNEG_Y_SLEWRATE = 99.0;
+    public static double JOYSTICK_MAXPOS_R_SLEWRATE = 99.0;
+    public static double JOYSTICK_MAXNEG_R_SLEWRATE = 99.0;
+
+    public static double JOYSTICK_MAX_SCALE = 0.6;
 
 }

@@ -7,16 +7,11 @@ import com.acmerobotics.roadrunner.geometry.Vector2d;
 import com.arcrobotics.ftclib.command.Command;
 import com.arcrobotics.ftclib.command.CommandBase;
 import com.arcrobotics.ftclib.command.CommandScheduler;
-import com.arcrobotics.ftclib.command.InstantCommand;
 import com.arcrobotics.ftclib.command.ParallelCommandGroup;
-import com.arcrobotics.ftclib.command.RunCommand;
 import com.arcrobotics.ftclib.command.SequentialCommandGroup;
-import com.arcrobotics.ftclib.command.WaitUntilCommand;
 
 import org.firstinspires.ftc.teamcode.RobotContainer;
 import org.firstinspires.ftc.teamcode.opmodes.AutonConstants;
-import org.firstinspires.ftc.teamcode.subsystems.ArmConstants;
-import org.firstinspires.ftc.teamcode.trajectorysequence.TrajectorySequence;
 import org.firstinspires.ftc.teamcode.vision.TeamPropDetector;
 
 import static org.firstinspires.ftc.teamcode.vision.TeamPropDetector.AllianceColor.BLUE;
@@ -123,7 +118,7 @@ public class AutoPlanCommand extends CommandBase {
             // get the robot pose for placing pixel at the required heading
             Pose2d robotInFrontOfSpike = getRobotPoseFromPixel( spikeCenter, headingDegrees);
 
-            RobotContainer.CommandBuilder cmd = robot.commandBuilder();
+            RobotContainer.CommandFactory cmd = robot.commandFactory();
 
 
             // Build robot to spike drive
@@ -231,9 +226,9 @@ public class AutoPlanCommand extends CommandBase {
                         // retract
                         // arm to start pos
                         // park in backstage
-                    cmd.armToStartPos(),
+                    cmd.armToAprilTagScanPosition(), // armToStartPos(),
                     new AlignToAprilTagCommand(robot, requiredTag).withTimeout(AutonConstants.APRILTAG_TIMEOUT),
-                    cmd.buildTraj( tb -> tb.forward(2).build() ),
+                    // cmd.buildTraj( tb -> tb.forward(2).build() ),
                     cmd.raiseOutandRelease(),
                   //      cmd.buildTraj( tb -> tb.back(8).build() ),
                     cmd.armToStartPos(),
@@ -283,10 +278,15 @@ public class AutoPlanCommand extends CommandBase {
         // Invert the position if looking from the blue side
         x = centerX + ((22.75 - (15d/16d)) / 2d) * ( ( redAlliance ? positionIndex : (2-positionIndex) ) - 1);
 
+        // Add 2 inches off from center if targetting middle spike, to increase clearance from
+        // the rigging structure to avoid hitting it during spin
+        if (position == TeamPropDetector.RandomizationPosition.CENTER)
+            x += 2 * (backstage ? 1 : -1);
+
         // Determine Y position of center spike
         // Blue is on the plus Y side
         // the Y co-ordinates are a symmetry thrugh the Y origin
-        centerY = bluePlus * 24.125;
+        centerY = bluePlus * 25; // 24.125;
 
         // The center Y of the side strips is 6 inches minus half a tape width
         // offset from the Y of the central strip

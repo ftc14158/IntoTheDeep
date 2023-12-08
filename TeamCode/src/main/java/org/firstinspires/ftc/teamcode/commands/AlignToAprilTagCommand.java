@@ -59,8 +59,8 @@ public class AlignToAprilTagCommand extends CommandBase {
                 // Drive to get closer to Y=13, X=0
                 AprilTagDetection tag = requiredTag.get();
                 // calculate drive error
-                double errorX = tag.ftcPose.x;
-                double errorY = 13.0 - tag.ftcPose.y;
+                double errorX = tag.ftcPose.x - AutonConstants.APRILTAG_SETPOINT_X;
+                double errorY = AutonConstants.APRILTAG_SETPOINT_Y - tag.ftcPose.y;
                 Log.w("APRILTAG","Required error "+errorX+","+errorY);
 
                 double powerX = clamp(errorX * AutonConstants.APRILTAG_KX, -AutonConstants.APRILTAG_CLAMP, AutonConstants.APRILTAG_CLAMP);

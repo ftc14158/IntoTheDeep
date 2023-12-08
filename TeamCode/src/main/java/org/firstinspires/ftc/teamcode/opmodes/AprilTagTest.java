@@ -20,6 +20,7 @@ import org.firstinspires.ftc.teamcode.commands.LaunchDroneCommand;
 import org.firstinspires.ftc.teamcode.commands.MecanumDriveCommand;
 import org.firstinspires.ftc.teamcode.commands.RunCommand;
 import org.firstinspires.ftc.teamcode.subsystems.ArmConstants;
+import org.firstinspires.ftc.teamcode.subsystems.SlideConstants;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 
@@ -33,12 +34,11 @@ public class AprilTagTest  extends CommandOpMode {
 
     @Override
     public void initialize() {
-        m_robot = new RobotContainer( true, hardwareMap, telemetry,
-                gamepad1, gamepad2, new Pose2d(-39,-63.5, Math.toRadians(90)));
+        m_robot = new RobotContainer( this );
 
         m_robot.getDrivetrain().setDefaultCommand(new MecanumDriveCommand(m_robot.getDrivetrain(),
                 () -> -m_robot.getGamepad1().getLeftY(), () -> m_robot.getGamepad1().getLeftX(),
-                () -> m_robot.getGamepad1().getRightX()));
+                () -> m_robot.getGamepad1().getRightX(), () -> false));
 
         m_robot.getArm().setDefaultCommand( new ArmControllerCommand(m_robot.getArm(),
                 () -> m_robot.getGamepad2().getLeftY(), () -> m_robot.getGamepad2().getRightY()) );
@@ -77,7 +77,7 @@ public class AprilTagTest  extends CommandOpMode {
         m_robot.getGamepad2().getGamepadButton(GamepadKeys.Button.BACK).whenPressed(
                 new SequentialCommandGroup(
                         new InstantCommand( () -> m_robot.getArm().goToLevel(3) ),
-                        new InstantCommand( () -> m_robot.getArm().setSlidePosition( ArmConstants.SLIDE_MAX )))
+                        new InstantCommand( () -> m_robot.getArm().setSlidePosition( SlideConstants.SLIDE_MAX )))
         );
 
         m_robot.getGamepad2().getGamepadButton(GamepadKeys.Button.A).whenPressed(
@@ -92,9 +92,9 @@ public class AprilTagTest  extends CommandOpMode {
 
 
         m_robot.getGamepad2().getGamepadButton(GamepadKeys.Button.DPAD_DOWN).whenPressed(
-                new InstantCommand( () -> m_robot.getArm().nudgePosition(-30) ) );
+                new InstantCommand( () -> m_robot.getArm().nudgePosition(-ArmConstants.NUDGE_DEGREES) ) );
         m_robot.getGamepad2().getGamepadButton(GamepadKeys.Button.DPAD_UP).whenPressed(
-                new InstantCommand( () -> m_robot.getArm().nudgePosition(30) ) );
+                new InstantCommand( () -> m_robot.getArm().nudgePosition(ArmConstants.NUDGE_DEGREES) ) );
         m_robot.getGamepad2().getGamepadButton(GamepadKeys.Button.DPAD_LEFT).whenPressed(
                 new InstantCommand( () -> m_robot.getArm().nudgeSlidePosition(-100) ) );
         m_robot.getGamepad2().getGamepadButton(GamepadKeys.Button.DPAD_RIGHT).whenPressed(
@@ -137,7 +137,7 @@ public class AprilTagTest  extends CommandOpMode {
                 new SequentialCommandGroup(
                         new InstantCommand( () -> m_robot.getArm().goToLevel(2) ),
                         new InstantCommand( () -> m_robot.getArm().setWristPositionLevel(2) ),
-                        new InstantCommand( () -> m_robot.getArm().setSlidePosition( ArmConstants.SLIDE_MAX) ),
+                        new InstantCommand( () -> m_robot.getArm().setSlidePosition( SlideConstants.SLIDE_MAX) ),
                         new WaitUntilCommand(  () -> m_robot.getArm().slideIdle() )
                         //  new RunCommand( () -> m_robot.getArm().grabOpen(), m_robot.getArm()).withTimeout(1000),
                         //  new ArmToCruiseCommand( m_robot.getArm() )

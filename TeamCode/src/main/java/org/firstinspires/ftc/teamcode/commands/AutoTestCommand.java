@@ -6,14 +6,10 @@ import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.acmerobotics.roadrunner.geometry.Vector2d;
 import com.arcrobotics.ftclib.command.CommandBase;
 import com.arcrobotics.ftclib.command.CommandScheduler;
-import com.arcrobotics.ftclib.command.InstantCommand;
 import com.arcrobotics.ftclib.command.ParallelCommandGroup;
 import com.arcrobotics.ftclib.command.SequentialCommandGroup;
-import com.arcrobotics.ftclib.command.WaitUntilCommand;
 
 import org.firstinspires.ftc.teamcode.RobotContainer;
-import org.firstinspires.ftc.teamcode.subsystems.ArmConstants;
-import org.firstinspires.ftc.teamcode.trajectorysequence.TrajectorySequence;
 import org.firstinspires.ftc.teamcode.vision.TeamPropDetector;
 
 import static org.firstinspires.ftc.teamcode.vision.TeamPropDetector.AllianceColor.BLUE;
@@ -95,7 +91,7 @@ public class AutoTestCommand extends CommandBase {
             Log.w("AUTOVISION", "Backdrop " +  facingBackdrop.toString());
             Log.w("AUTOVISION", "Required tag " + requiredTag );
 
-            RobotContainer.CommandBuilder cmd = robot.commandBuilder();
+            RobotContainer.CommandFactory cmd = robot.commandFactory();
 
             // Schedule commands to run the route..
             CommandScheduler.getInstance().schedule(

@@ -7,11 +7,11 @@ import com.arcrobotics.ftclib.gamepad.GamepadKeys;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.teamcode.commands.RunCommand;
-import org.firstinspires.ftc.teamcode.subsystems.ArmConstants;
+import org.firstinspires.ftc.teamcode.subsystems.SlideConstants;
 import org.firstinspires.ftc.teamcode.subsystems.mechanism.SlideController;
 
 @TeleOp(group="test", name = "Test Slide")
-public class SlideTest extends CommandOpMode  {
+public class TestSlideController extends CommandOpMode  {
     private SlideController slideController;
 
     private GamepadEx pad1;
@@ -24,13 +24,13 @@ public class SlideTest extends CommandOpMode  {
         slideController.stop();
 
         pad1.getGamepadButton(GamepadKeys.Button.X).whenPressed(
-                new InstantCommand( () -> slideController.setController(ArmConstants.SLIDE_CRUISE ) ) );
+                new InstantCommand( () -> slideController.setController(SlideConstants.SLIDE_CRUISE ) ) );
 
         pad1.getGamepadButton(GamepadKeys.Button.Y).whenPressed(
-                new InstantCommand( () -> slideController.setController(ArmConstants.SLIDE_GROUND ) ) );
+                new InstantCommand( () -> slideController.setController(SlideConstants.SLIDE_GROUND ) ) );
 
         pad1.getGamepadButton(GamepadKeys.Button.B).whenPressed(
-                new InstantCommand( () -> slideController.setController(ArmConstants.SLIDE_MAX ) ) );
+                new InstantCommand( () -> slideController.setController(SlideConstants.SLIDE_MAX ) ) );
 
         pad1.getGamepadButton(GamepadKeys.Button.A).whenPressed(
                 new InstantCommand( slideController::stop) );
