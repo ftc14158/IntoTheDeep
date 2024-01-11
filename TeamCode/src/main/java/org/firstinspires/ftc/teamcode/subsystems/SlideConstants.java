@@ -23,5 +23,5 @@ public class SlideConstants {
     // Slide position when arm level for driving
     public static double SLIDE_CRUISE = 30;
     // Slide distance to raise by one pixel height
-    public static double SLIDE_PIXEL_HEIGHT = 300;
+    public static double SLIDE_PIXEL_HEIGHT = 330;
 }

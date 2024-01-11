@@ -3,8 +3,10 @@ package org.firstinspires.ftc.teamcode.opmodes;
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.arcrobotics.ftclib.command.CommandOpMode;
+import com.arcrobotics.ftclib.command.CommandScheduler;
 import com.arcrobotics.ftclib.command.InstantCommand;
 import com.arcrobotics.ftclib.command.PerpetualCommand;
+import com.arcrobotics.ftclib.command.ScheduleCommand;
 import com.arcrobotics.ftclib.command.SequentialCommandGroup;
 import com.arcrobotics.ftclib.command.WaitUntilCommand;
 import com.arcrobotics.ftclib.gamepad.GamepadKeys;
@@ -31,14 +33,17 @@ public class AprilTagTest  extends CommandOpMode {
 
     private RobotContainer m_robot;
     private AprilTagProcessor aprilTag;
+    private int targetTag = 2;
 
     @Override
     public void initialize() {
         m_robot = new RobotContainer( this );
 
+        RobotContainer.CommandFactory cmd = m_robot.commandFactory();
+
         m_robot.getDrivetrain().setDefaultCommand(new MecanumDriveCommand(m_robot.getDrivetrain(),
                 () -> -m_robot.getGamepad1().getLeftY(), () -> m_robot.getGamepad1().getLeftX(),
-                () -> m_robot.getGamepad1().getRightX(), () -> false));
+                () -> m_robot.getGamepad1().getRightX(), () -> false, telemetry) );
 
         m_robot.getArm().setDefaultCommand( new ArmControllerCommand(m_robot.getArm(),
                 () -> m_robot.getGamepad2().getLeftY(), () -> m_robot.getGamepad2().getRightY()) );
@@ -85,10 +90,10 @@ public class AprilTagTest  extends CommandOpMode {
                         new InstantCommand( () -> m_robot.getArm().setWristPositionLevel(0) ),
                         new InstantCommand( () -> m_robot.getArm().goToLevel(0) ) ) );
 
-        m_robot.getGamepad2().getGamepadButton(GamepadKeys.Button.LEFT_BUMPER).whenPressed(
-                new InstantCommand( () -> m_robot.getArm().setGrab(true) ) );
-        m_robot.getGamepad2().getGamepadButton(GamepadKeys.Button.RIGHT_BUMPER).whenPressed(
-                new InstantCommand( () -> m_robot.getArm().setGrab(false)) );
+        m_robot.getGamepad1().getGamepadButton(GamepadKeys.Button.LEFT_BUMPER).whenPressed(
+                new InstantCommand( () -> targetTag-- ) );
+        m_robot.getGamepad1().getGamepadButton(GamepadKeys.Button.RIGHT_BUMPER).whenPressed(
+                new InstantCommand( () -> targetTag++ ) );
 
 
         m_robot.getGamepad2().getGamepadButton(GamepadKeys.Button.DPAD_DOWN).whenPressed(
@@ -115,33 +120,18 @@ public class AprilTagTest  extends CommandOpMode {
 
         m_robot.getGamepad1().getGamepadButton(GamepadKeys.Button.A).whenPressed(
 
-                new SequentialCommandGroup(
-                        new ArmToGroundCommand( m_robot.getArm() ),
-                        new WaitUntilCommand(  () -> m_robot.getArm().slideIdle() ),
-                        new RunCommand( () -> m_robot.getArm().grabOpen(), m_robot.getArm())
 
-                )
+                new InstantCommand( () -> m_robot.getArm().grabOpen() )
         )
         ;
 
         m_robot.getGamepad1().getGamepadButton(GamepadKeys.Button.X).whenPressed(
 
-                new SequentialCommandGroup(
-                        new RunCommand( () -> m_robot.getArm().grabClose(), m_robot.getArm()).withTimeout(500),
-                        new ArmToCruiseCommand( m_robot.getArm() )
-                )
+                new InstantCommand( () -> m_robot.getArm().grabClose() )
         );
 
         m_robot.getGamepad1().getGamepadButton(GamepadKeys.Button.Y).whenPressed(
-
-                new SequentialCommandGroup(
-                        new InstantCommand( () -> m_robot.getArm().goToLevel(2) ),
-                        new InstantCommand( () -> m_robot.getArm().setWristPositionLevel(2) ),
-                        new InstantCommand( () -> m_robot.getArm().setSlidePosition( SlideConstants.SLIDE_MAX) ),
-                        new WaitUntilCommand(  () -> m_robot.getArm().slideIdle() )
-                        //  new RunCommand( () -> m_robot.getArm().grabOpen(), m_robot.getArm()).withTimeout(1000),
-                        //  new ArmToCruiseCommand( m_robot.getArm() )
-                )
+                cmd.armToAprilTagScanPosition()
         );
 
         m_robot.getGamepad1().getGamepadButton(GamepadKeys.Button.B).whenPressed(
@@ -149,13 +139,25 @@ public class AprilTagTest  extends CommandOpMode {
                 new ArmStartPositionCommand(  m_robot.getArm() )
         );
 
-        m_robot.getGamepad1().getGamepadButton(GamepadKeys.Button.START).whenPressed(
 
-                new LaunchDroneCommand(m_robot.getDroneSubsystem()).withTimeout(3000)
+        m_robot.getGamepad1().getGamepadButton(GamepadKeys.Button.BACK).whenPressed(
+                new InstantCommand( () -> {
+                    CommandScheduler.getInstance().schedule(new SequentialCommandGroup(
+
+                            new AlignToAprilTagCommand(m_robot, targetTag, true).withTimeout((int)AutonConstants.APRILTAG_TIMEOUT)
+                            ,cmd.raiseOutandRelease()
+                    ) );
+                })
         );
 
-        m_robot.getGamepad1().getGamepadButton(GamepadKeys.Button.BACK).whileHeld(
-                new AlignToAprilTagCommand( m_robot, 5 )
+        m_robot.getGamepad1().getGamepadButton(GamepadKeys.Button.START).whenPressed(
+                new InstantCommand( () -> {
+                    CommandScheduler.getInstance().schedule(new SequentialCommandGroup(
+
+                        new AlignToAprilTagCommand(m_robot, targetTag, false).withTimeout((int)AutonConstants.APRILTAG_TIMEOUT)
+                        ,cmd.raiseOutandRelease()
+                ) );
+                })
         );
 
         FtcDashboard dashboard = FtcDashboard.getInstance();
@@ -168,6 +170,7 @@ public class AprilTagTest  extends CommandOpMode {
         schedule(new RunCommand(() -> {
             m_robot.getDrivetrain().update();
             telemetryAprilTag();
+            telemetry.addData("Target tag", targetTag);
             telemetry.addData("Heading", m_robot.getDrivetrain().getPoseEstimate().getHeading());
             telemetry.update();
         }));

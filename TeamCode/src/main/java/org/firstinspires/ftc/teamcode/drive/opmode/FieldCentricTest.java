@@ -35,7 +35,7 @@ public class FieldCentricTest extends CommandOpMode {
         register(drive);
         drive.setDefaultCommand(new MecanumDriveCommand(
                 drive, () -> -gamepad.getLeftY(), gamepad::getLeftX, gamepad::getRightX,
-                () -> false
+                () -> false, telemetry
         ));
 
         schedule(new RunCommand(() -> {

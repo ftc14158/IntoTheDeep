@@ -9,6 +9,7 @@ import com.arcrobotics.ftclib.command.CommandBase;
 import com.arcrobotics.ftclib.command.CommandScheduler;
 import com.arcrobotics.ftclib.command.ParallelCommandGroup;
 import com.arcrobotics.ftclib.command.SequentialCommandGroup;
+import com.arcrobotics.ftclib.command.WaitUntilCommand;
 
 import org.firstinspires.ftc.teamcode.RobotContainer;
 import org.firstinspires.ftc.teamcode.opmodes.AutonConstants;
@@ -45,18 +46,20 @@ public class AutoPlanCommand extends CommandBase {
 
     private TeamPropDetector.AllianceColor forceColor = null;
     private Boolean forceBackstage = null;
+    private boolean leftSlot;  // aim for left slot above april tag
 
     private static double TILE_WIDTH = 23.5;
     private static double TAPE_WIDTH = 15d/16d;
 
     public AutoPlanCommand(RobotContainer robot, TeamPropDetector propDetector,
                            TeamPropDetector.AllianceColor forceColor,
-                           Boolean forceBackstage) {
+                           Boolean forceBackstage, boolean leftSlot) {
         this.robot = robot;
         this.propDetector = propDetector;
 
         this.forceColor = forceColor;
         this.forceBackstage = forceBackstage;
+        this.leftSlot = leftSlot;
 
         // nobody else starts this this command finishes.
         addRequirements(robot.getDrivetrain(), robot.getArm());
@@ -143,14 +146,14 @@ public class AutoPlanCommand extends CommandBase {
             // adjust for position - AprilTags are 6 inches apart
             backdropY -= 6 * (positionIndex - 1);
 
-            Pose2d facingBackdrop = new Pose2d( 47, backdropY, Math.toRadians(0) );
+            Pose2d facingBackdrop = new Pose2d( 48, backdropY, Math.toRadians(0) );
 
             // Final position
             Pose2d parkedPose;
             if (backstage) {
-                parkedPose = new Pose2d(45, bluePlus * (14 + TILE_WIDTH * 2), Math.toRadians(0));
+                parkedPose = new Pose2d(47, bluePlus * (14 + TILE_WIDTH * 2), Math.toRadians(0));
             } else {
-                parkedPose = new Pose2d(45, bluePlus * 14, Math.toRadians(0));
+                parkedPose = new Pose2d(47, bluePlus * 14, Math.toRadians(0));
             }
 
             Command mainDrive;
@@ -207,6 +210,7 @@ public class AutoPlanCommand extends CommandBase {
                     // slightly clear of placed pixel before turning..
                     cmd.buildTraj( tb -> tb.back(  /*blueAlliance && position == TeamPropDetector.RandomizationPosition.RIGHT ? 0.5 :*/ 3).build() ),
 
+                    cmd.waitMillisecs( backstage ? 0 : 3000 ),
                     // retract
                     new ParallelCommandGroup(
                         cmd.armToCruise(),
@@ -227,12 +231,22 @@ public class AutoPlanCommand extends CommandBase {
                         // arm to start pos
                         // park in backstage
                     cmd.armToAprilTagScanPosition(), // armToStartPos(),
-                    new AlignToAprilTagCommand(robot, requiredTag).withTimeout(AutonConstants.APRILTAG_TIMEOUT),
+
+                    new AlignToAprilTagCommand(robot, requiredTag, leftSlot).withTimeout((int)AutonConstants.APRILTAG_TIMEOUT),
                     // cmd.buildTraj( tb -> tb.forward(2).build() ),
-                    cmd.raiseOutandRelease(),
+
+              //          cmd.buildTraj( tb -> tb.strafeRight(3).build() ),
+              //          new WaitUntilCommand( () -> !robot.getDrivetrain().isBusy() ),
+
+
+                        cmd.raiseOutandRelease(),
                   //      cmd.buildTraj( tb -> tb.back(8).build() ),
-                    cmd.armToStartPos(),
-                    cmd.buildTraj( tb -> tb.lineToSplineHeading( parkedPose ).build() )
+                  //  new SequentialCommandGroup(
+                  //          cmd.waitMillisecs(00),
+                  //          cmd.armToStartPos() ) ,
+                    cmd.buildTraj( tb -> tb.lineToSplineHeading( parkedPose ).build() ),
+                        new WaitUntilCommand( () -> !robot.getDrivetrain().isBusy() ),
+                        cmd.armToStartPos()
                 )
 
             );
@@ -286,7 +300,7 @@ public class AutoPlanCommand extends CommandBase {
         // Determine Y position of center spike
         // Blue is on the plus Y side
         // the Y co-ordinates are a symmetry thrugh the Y origin
-        centerY = bluePlus * 25; // 24.125;
+        centerY = bluePlus * 24.25;
 
         // The center Y of the side strips is 6 inches minus half a tape width
         // offset from the Y of the central strip

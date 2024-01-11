@@ -125,11 +125,13 @@ public class DriveRobot extends CommandOpMode {
 
         robot.getDrivetrain().setDefaultCommand(new MecanumDriveCommand(robot.getDrivetrain(),
                 () -> -robot.getGamepad1().getLeftY(), () -> robot.getGamepad1().getLeftX(),
-                () -> robot.getGamepad1().getRightX(), () -> robot.getGamepad1().getGamepadButton(Button.LEFT_BUMPER).get()));
+                () -> robot.getGamepad1().getRightX(), () -> robot.getGamepad1().getGamepadButton(Button.LEFT_BUMPER).get(),
+                telemetry));
 
         schedule(new RunCommand(() -> {
             robot.getDrivetrain().update();
-            telemetry.addData("Heading", Math.toDegrees(robot.getDrivetrain().getPoseEstimate().getHeading()) );
+            // telemetry.addData("Pose", robot.getDrivetrain().getPoseEstimate());
+
             telemetry.update();
         }));
 

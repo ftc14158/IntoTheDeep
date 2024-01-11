@@ -20,16 +20,20 @@ public class Auton extends CommandOpMode {
 
     protected static TeamPropDetector.AllianceColor forceColor = TeamPropDetector.AllianceColor.UNKNOWN;
     protected static Boolean forceBackstage = null;
+    protected static boolean leftSlot;
 
     // Assume color and position unknown here, leave up to vision
     // system to detect.
     protected void setAssumptions() {
         forceColor = TeamPropDetector.AllianceColor.UNKNOWN;
         forceBackstage = null;
+        leftSlot = true;
     }
 
     @Override
     public void initialize() {
+
+        setAssumptions();
 
         // Create an FTC dashboard object to use to send back telemetry information
         FtcDashboard dashboard = FtcDashboard.getInstance();
@@ -53,7 +57,7 @@ public class Auton extends CommandOpMode {
         robot.getArm().grabClose();
 
         // schedule a command to decide what further commands to schedule...
-        schedule(new AutoPlanCommand(robot, visionProcessor1, forceColor, forceBackstage));
+        schedule(new AutoPlanCommand(robot, visionProcessor1, forceColor, forceBackstage, leftSlot));
         // schedule(new AutoTestCommand(m_robot, visionProcessor1));
     }
 

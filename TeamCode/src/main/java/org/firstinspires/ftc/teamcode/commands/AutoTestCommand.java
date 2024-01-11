@@ -113,7 +113,7 @@ public class AutoTestCommand extends CommandBase {
                             // arm to start pos
                             // park in backstage
                             cmd.armToStartPos(),
-                            new AlignToAprilTagCommand(robot, requiredTag).withTimeout(4000),
+                            new AlignToAprilTagCommand(robot, requiredTag, false).withTimeout(4000),
                             cmd.armToCruise(),
                             //new RunCommand( () -> robot.getDrivetrain().drive( -.3, 0, 0 ), robot.getDrivetrain()).withTimeout(300),
                             //new InstantCommand( () -> robot.getDrivetrain().stop(), robot.getDrivetrain()),

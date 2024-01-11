@@ -284,9 +284,12 @@ public class RobotContainer {
                     new InstantCommand( () -> { robot.getArm().setWristRelativeAngle(AutonConstants.WRIST_RELEASE_POSITION); } ),
                     new InstantCommand( () -> { robot.getArm().setSlidePosition(AutonConstants.SLIDE_RELEASE_POSITION );}),
                     new WaitUntilCommand( () -> robot.getArm().slideCloseToPos() ),
-                      new WaitUntilCommand( () -> !robot.getDrivetrain().isBusy() ),
-                    openGrab()
-            );
+         //             new WaitUntilCommand( () -> !robot.getDrivetrain().isBusy() ),
+                    openGrab(),
+                    waitMillisecs( (int)AutonConstants.PIXEL_RELEASE_DELAY_MS ),
+                    new InstantCommand( () -> { robot.getArm().nudgeSlidePosition( -1800 );}),
+                    new WaitUntilCommand( () -> robot.getArm().slideCloseToPos() )
+                    );
 
         }
 
