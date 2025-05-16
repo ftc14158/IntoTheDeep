@@ -15,14 +15,15 @@ public class ArmToGroundCommand extends SequentialCommandGroup {
 
         addCommands(
                 // ensure grab closed
-                new InstantCommand( arm::grabClose ),
+                new InstantCommand( arm::grabOpen ),
                 // Make sure slide is retracted first
-                new InstantCommand( () -> { arm.setSlidePosition(SlideConstants.SLIDE_CRUISE);}),
+                new InstantCommand( () -> arm.setWristPositionLevel(0)),
+                new InstantCommand( () -> { arm.setSlidePosition(SlideConstants.SLIDE_GROUND);}),
                 new WaitUntilCommand( arm::slideCloseToPos ),
                 // Then move to bottom level and start extending slide
-                new InstantCommand( () -> arm.setWristPositionLevel(0)),
+
                 new InstantCommand( () -> { arm.goToLevel( 0 );} ), // .withTimeout(800),
-                new InstantCommand( () -> { arm.setSlidePosition(SlideConstants.SLIDE_GROUND);}),
+//                new InstantCommand( () -> { arm.setSlidePosition(SlideConstants.SLIDE_GROUND);}),
                 new WaitUntilCommand( arm::slideCloseToPos )
         );
         addRequirements(arm);

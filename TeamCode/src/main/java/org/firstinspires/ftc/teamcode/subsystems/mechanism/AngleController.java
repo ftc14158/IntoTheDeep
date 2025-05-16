@@ -34,9 +34,14 @@ public class AngleController {
     private MechanismMode mode = IDLE;
     private double anglePotVoltage;
 
+    private boolean motorDisable = false;
     private double lastPError = 0;
     private double lastFFError = 0;
+    private double lastFFErrorBase = 0;
+
     private double lastPower = 0;
+
+    private double requestedPower = 0;
 
     private double setPoint = 0;
 
@@ -99,22 +104,26 @@ public class AngleController {
 
                 // ticks per sec to rads per sec
                 lastPError = pController.calculate(currentPositionRadians);
+
+                lastPError *= (1+(ArmConstants.ARM_KP_EXT * extension));
+
                 // clamp p_error to a max value
                 double clampedPError = clamp(lastPError, ArmConstants.ARM_PCLAMP_LOW, ArmConstants.ARM_PCLAMP_HIGH);
                 lastPError = clampedPError;
 
                 // The balance gets closer to vertical as arm extends..
 
-
                 double balanceAdjustedRadians = setPoint + ( ArmConstants.ARM_BALANCE_OFFSET_RADS * (1.2 - extension) );
 
-                lastFFError =  ffController.calculate(balanceAdjustedRadians, anglePot.radiansPerSecond() );
+                lastFFErrorBase =  ffController.calculate(balanceAdjustedRadians, anglePot.radiansPerSecond() );
                 // increase kcos error based on slide length
-                lastFFError += ( (ArmConstants.ARM_KCOS_EXT * extension) * Math.cos(balanceAdjustedRadians) );
+                // but only when tilted forward
+                // if (setPoint < ArmConstants.ARM_BALANCE_OFFSET_RADS)
+                    lastFFError = lastFFErrorBase * (1 +(ArmConstants.ARM_KCOS_EXT * extension) );
 
                 // Precaution: Turn off motor once arm is within 5 degrees of home to avoid controller taking too long to
                 // bring arm to home position. Major problem if arm does not home accurately and quickly.
-                if (mode == RETURNING_TO_HOME && ( (currentPositionRadians - ArmConstants.ARM_HOME_RADS ) < Math.toRadians(5))) {
+                if (mode == RETURNING_TO_HOME && ( (currentPositionRadians - ArmConstants.ARM_HOME_RADS ) < Math.toRadians(2))) {
                     // within 3 degrees  of home, so drop the rest of the way with gravity
                     // and turn off motor
                     setPower(0);
@@ -143,7 +152,11 @@ public class AngleController {
             case IDLE:
                 // in idle mode,
                 iSteady = 0;
-                motor.stopMotor();
+                if (Math.abs(requestedPower) < 0.05) {
+                    motor.stopMotor();
+                } else {
+                    motor.set(requestedPower * ArmConstants.ARM_POWER_SIGN);
+                }
 
         }
 
@@ -215,9 +228,13 @@ public class AngleController {
     }
 
     public void stop() {
+        lastPower = 0;
         mode = IDLE;
     }
 
+    public void disableMotor(boolean disabled) {
+        motorDisable = disabled;
+    }
     public MechanismMode getMode() {
         return mode;
     }
@@ -233,19 +250,32 @@ public class AngleController {
         Map<String, Object> data = new HashMap<String, Object>();
 
         data.put("Mode", mode);
-        data.put("Arm Angle", Math.toDegrees(anglePot.getRadians() + ArmConstants.ARM_HOME_RADS) );
         data.put("Pot Angle", angle() );
+        data.put("Arm Angle", Math.toDegrees(anglePot.getRadians() + ArmConstants.ARM_HOME_RADS) );
         data.put("Setpoint", Math.toDegrees(setPoint()));
         data.put("PError", lastPError );
+        data.put("Accel", Math.toDegrees( anglePot.radiansPerSecond() ) );
+        data.put("FFErrorBase", lastFFErrorBase );
         data.put("FFError", lastFFError );
         data.put("Power", lastPower);
-        data.put("Voltage", voltage());
+        data.put("Requested Power", requestedPower);
+//        data.put("Voltage", voltage());
         return data;
     }
 
     private void setPower(double power)
     {
         lastPower = power;
-        motor.set(power * ArmConstants.ARM_POWER_SIGN);
+        motor.set(motorDisable ? 0 : power * ArmConstants.ARM_POWER_SIGN);
+
+    }
+
+    public void setDirectPower(double power) {
+        requestedPower = power;
+        mode = IDLE;
+    }
+
+    public boolean isIdle() {
+        return mode == IDLE;
     }
 }

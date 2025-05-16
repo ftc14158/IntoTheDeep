@@ -25,33 +25,35 @@ public class ArmConstants {
 
     public static double ARM_POWER_SIGN = -1.;
 
-    public static double ARM_KP = 0.9; // 0.0017; // 0.0028; // 0.0005;
-    public static double ARM_KI = 0.5; // 0.1; // 0.000;
+    public static double ARM_KP = 0.4; // 0.0017; // 0.0028; // 0.0005;
+    public static double ARM_KI = 0.3; // 0.1; // 0.000;
     public static double ARM_KD = 0.01; // 0.00019; // 0.00028;
-    public static double ARM_KS = 0.0;
-    public static double ARM_KCOS = 0.15; // 0.15; // 0.45; // 0.18;
-    public static double ARM_KCOS_EXT = 0.01;   // multiplier for kcos to slide extent (0->1)
+    public static double ARM_KS = 0.05;
+    public static double ARM_KCOS = 0.1; // 0.15; // 0.45; // 0.18;
+    public static double ARM_KCOS_EXT = 2.5;   // multiplier for kcos to slide extent (0->1)
+
+    public static double ARM_KP_EXT = 1.5;
 
     // Arm actually balances 20 degrees before vertical, so max gravity is 20 degrees below horizontal
     public static double ARM_BALANCE_OFFSET_RADS = 20 * (Math.PI / 180.);
 
-    public static double ARM_KV = -0.09; // 0.0;
+    public static double ARM_KV = -0.1; // 0.0;
     public static double ARM_KA = 0.0;
     // clamp max error from PID controller
-    public static double ARM_PCLAMP_HIGH = 1.0; // 0.45;
-    public static double ARM_PCLAMP_LOW = -1.0; // 0.45;
+    public static double ARM_PCLAMP_HIGH = 0.54; // 0.45;
+    public static double ARM_PCLAMP_LOW = -0.3; // 0.45;
 
     // Preset arm positions as degrees above/below horizontal
     public static double POSITION1 = -10;
     public static double POSITION2 = 5;
-    public static double POSITION3 = 105;
+    public static double POSITION3 = 106;
 
     // How many degrees to nudge up/down when using gamepad
     public static double NUDGE_DEGREES = 10;
 
     // Grab servo degrees
-    public static double GRAB_OPEN = 125;
-    public static double GRAB_CLOSED = 180;
+    public static double GRAB_OPEN = 90;
+    public static double GRAB_CLOSED = 20;
 
     public static double DRONE_LAUNCH = 1;
     public static double DRONE_SET = 0.15 ;

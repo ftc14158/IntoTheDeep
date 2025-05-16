@@ -73,9 +73,9 @@ public class ArmSubsystem extends SubsystemBase {
         wristController.setOffsetDegrees( angleController.getDegreesAboveHorizontal() );
         wristController.update();
 
-//        m_wristController.debugInfo().forEach( (k,v) -> m_robot.addTelem(k,v) );
+        wristController.debugInfo().forEach( (k,v) -> robot.addTelem(k,v) );
 //        slideController.debugInfo().forEach( (k, v) -> robot.addTelem(k,v) );
-        angleController.debugInfo().forEach( (k, v) -> robot.addTelem(k,v) );
+//        angleController.debugInfo().forEach( (k, v) -> robot.addTelem(k,v) );
     }
 
     public void stopSlide() {
@@ -169,11 +169,21 @@ public class ArmSubsystem extends SubsystemBase {
             wristController.setRelativeAngle(WristConstants.WRIST_POS1);
         } else if (level == 2) {
             wristController.setRelativeAngle(WristConstants.WRIST_POS2);
+        } else if (level == 3) {
+            wristController.setRelativeAngle(WristConstants.WRIST_POS3);
         }
 
     }
 
+    public void nudgeWristPosition(double delta) {
+        wristController.nudgePosition(delta);
+    }
+
     public void setWristRelativeAngle(double angle) {
         wristController.setRelativeAngle(angle);
+    }
+
+    public void setWristHorizonAngle(double angle) {
+        wristController.setAngleAboveHorizontal(angle);
     }
 }

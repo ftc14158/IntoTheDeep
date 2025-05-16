@@ -19,7 +19,7 @@ public class SlideConstants {
     // Max slide position
     public static double SLIDE_MAX = 3550;
     // Slide position when grabber at ground
-    public static double SLIDE_GROUND = 2050;
+    public static double SLIDE_GROUND = 1100;
     // Slide position when arm level for driving
     public static double SLIDE_CRUISE = 30;
     // Slide distance to raise by one pixel height

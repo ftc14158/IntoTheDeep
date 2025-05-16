@@ -5,6 +5,7 @@ import com.arcrobotics.ftclib.controller.wpilibcontroller.ArmFeedforward;
 import com.arcrobotics.ftclib.hardware.motors.Motor;
 import com.arcrobotics.ftclib.hardware.motors.MotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.util.RobotLog;
 
 import org.firstinspires.ftc.teamcode.subsystems.ArmConstants;
 import org.firstinspires.ftc.teamcode.subsystems.MechanismMode;
@@ -141,6 +142,16 @@ public class WristController {
 
     public void setRelativeAngle(double angleDegrees) {
         setController( WristConstants.WRIST_POT_LEVEL_ANGLE_DEGREES + angleDegrees, true );
+    }
+
+    public void nudgePosition(double delta) {
+        if (mode == POSITIONING) {
+            // RobotLog.i("NUDGE setpoint %f, delta %f", setPoint, delta);
+            //setPoint += delta;
+            setPoint = clamp(setPoint + delta, WristConstants.WRIST_POT_LEVEL_ANGLE_DEGREES + WristConstants.WRIST_MIN, WristConstants.WRIST_POT_LEVEL_ANGLE_DEGREES + WristConstants.WRIST_MAX);
+            updateControllerSetpoint();
+        }
+
     }
 
     public void setAngleAboveHorizontal(double angleDegrees) {

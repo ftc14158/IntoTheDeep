@@ -26,7 +26,6 @@ import org.firstinspires.ftc.teamcode.commands.TrajectoryBuildCommand;
 import org.firstinspires.ftc.teamcode.drive.SampleMecanumDrive;
 import org.firstinspires.ftc.teamcode.opmodes.AutonConstants;
 import org.firstinspires.ftc.teamcode.subsystems.ArmSubsystem;
-import org.firstinspires.ftc.teamcode.subsystems.DroneSubsystem;
 import org.firstinspires.ftc.teamcode.subsystems.MecanumDriveSubsystem;
 import org.firstinspires.ftc.teamcode.subsystems.SlideConstants;
 import org.firstinspires.ftc.teamcode.trajectorysequence.TrajectorySequence;
@@ -53,7 +52,6 @@ public class RobotContainer {
 
     // Other subsystems to come..
     private final ArmSubsystem m_arm;
-    private final DroneSubsystem m_drone;
 
     public Map<String, Object> m_telemetryItems;
 
@@ -84,7 +82,6 @@ public class RobotContainer {
         m_gamepad2 = new GamepadEx(opMode.gamepad2);
 
         m_arm = new ArmSubsystem(hardwareMap, this);
-        m_drone = new DroneSubsystem(hardwareMap, this);
 
         m_drivetrain.setDefaultCommand( new RunCommand( () -> { m_drivetrain.stop(); m_drivetrain.update(); } , m_drivetrain ) );
 
@@ -98,7 +95,6 @@ public class RobotContainer {
     }
     public MecanumDriveSubsystem getDrivetrain() { return m_drivetrain; }
     public ArmSubsystem getArm() { return m_arm; }
-    public DroneSubsystem getDroneSubsystem() { return m_drone; }
 
 
     public void addTelem(String name, Object value) {
@@ -242,6 +238,14 @@ public class RobotContainer {
         public Command armToCruise() {
             return new ArmToCruiseCommand(robot.getArm());
         }
+public Command armToMax() {
+    return new SequentialCommandGroup(
+            new InstantCommand( () -> robot.getArm().goToLevel(3) ),
+            new InstantCommand( () -> robot.getArm().setWristPositionLevel(3) ),
+            new InstantCommand( () -> robot.getArm().setSlidePosition( SlideConstants.SLIDE_MAX )),
+            new WaitUntilCommand( () -> robot.getArm().slideCloseToPos() )
+    );
+}
 
         public Command armToStartPos() {
             return new ArmStartPositionCommand(robot.getArm());

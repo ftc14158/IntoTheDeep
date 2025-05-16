@@ -9,11 +9,11 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.PoseStorage;
 import org.firstinspires.ftc.teamcode.RobotContainer;
-import org.firstinspires.ftc.teamcode.commands.AutoPlanCommand;
+import org.firstinspires.ftc.teamcode.commands.AutoBasketCommand;
 import org.firstinspires.ftc.teamcode.vision.TeamPropDetector;
 
-@Autonomous(name="Auton", preselectTeleOp = "Drive Robot")
-public class Auton extends CommandOpMode {
+@Autonomous(name="Samples To Basket", preselectTeleOp = "Drive Robot")
+public class SamplesToBasket extends CommandOpMode {
     private RobotContainer robot = null;
 
     private TeamPropDetector visionProcessor1;
@@ -44,9 +44,9 @@ public class Auton extends CommandOpMode {
                 robot = new RobotContainer(this );
 
         // Create outr vision processor and start the vision portal
-        robot.initVision();
-        visionProcessor1 = robot.teamPropProcessor();
-        robot.startVisionProcessor(visionProcessor1);
+        //robot.initVision();
+        //visionProcessor1 = robot.teamPropProcessor();
+   //     robot.startVisionProcessor(visionProcessor1);
 
         // Create a command that will run every time in the loop to send back the telemetry to
         // the FTC dashboard
@@ -54,11 +54,11 @@ public class Auton extends CommandOpMode {
             robot.sendTelem(dashboard);
         })));
 
-        robot.getArm().grabClose();
+     //   robot.getArm().grabClose();
 
         // schedule a command to decide what further commands to schedule...
-        schedule(new AutoPlanCommand(robot, visionProcessor1, forceColor, forceBackstage, leftSlot));
-        // schedule(new AutoTestCommand(m_robot, visionProcessor1));
+        //schedule(new AutoPlanCommand(robot, visionProcessor1, forceColor, forceBackstage, leftSlot));
+        schedule(new AutoBasketCommand(robot, TeamPropDetector.AllianceColor.RED ));
     }
 
     // Before reset at end of run, save current pose

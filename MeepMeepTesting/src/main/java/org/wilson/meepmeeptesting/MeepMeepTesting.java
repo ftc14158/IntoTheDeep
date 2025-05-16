@@ -46,7 +46,7 @@ public class MeepMeepTesting {
         // The center Y of the side strips is 6 inches minus half a tape width
         // offset from the Y of the central strip
         y = centerY;
-        if (position != 1) y += (red ? -1 : 1) * (6 - 15/32);
+        if (position != 1) y += (red ? -1 : 1) * (6. - 15./32);
 
         return new Vector2d(x,y);
     }
@@ -60,7 +60,9 @@ public class MeepMeepTesting {
         int position = 2;
         Vector2d spikeCenter;
 
-        Pose2d startingPose = getStartingPose(!red, backstageSide);
+        //Pose2d startingPose = getStartingPose(!red, backstageSide);
+
+        Pose2d startingPose = new Pose2d(-39.0, -62.125, Math.toRadians( 90 ) );
 
         // red audience side start, place on left pixel
         // centerstage exit
@@ -94,22 +96,20 @@ public class MeepMeepTesting {
 
                 .followTrajectorySequence(drive ->
                         drive.trajectorySequenceBuilder( startingPose )
+                                // .lineToSplineHeading( robotInFrontOfSpike )
+                                .strafeTo( new Vector2d( -49, -35 ))
                                 .waitSeconds(2)
-                                .lineToSplineHeading( robotInFrontOfSpike )
-                                // .lineToSplineHeading(new Pose2d(-35.5 -11.8, -23.5, Math.toRadians(0)) )
-                                // .forward(25)
-                                .waitSeconds(.5)
-                                .forward(1)
-                                .waitSeconds(.5)
-                                .lineToSplineHeading( linedUpForCenterstage )
-                                // .splineToConstantHeading( new Vector2d(-35.5, -10.5), Math.toRadians(0))
-                               // .lineToSplineHeading(new Pose2d(-39, -60, Math.toRadians(0)) )
-                                .lineTo( new Vector2d(12, 10.5 * (red ? -1 : 1) ) )
-                                .lineToConstantHeading( new Vector2d(48, (red ? -1 : 0) * 36) )
+                                .setReversed(true)
+                                .splineTo( new Vector2d( -57, -57) , Math.toRadians(45+180) )
+                                .waitSeconds(2)
+                                .setReversed(false)
+
+//                                .lineTo( new Vector2d(12, 10.5 * (red ? -1 : 1) ) )
+ //                               .lineToConstantHeading( new Vector2d(48, (red ? -1 : 0) * 36) )
                                 .build()
                                 );
 
-        meepMeep.setBackground(MeepMeep.Background.FIELD_CENTERSTAGE_OFFICIAL)
+        meepMeep.setBackground(MeepMeep.Background.FIELD_INTOTHEDEEP_OFFICIAL)
                 .setDarkMode(true)
                 .setBackgroundAlpha(0.95f)
                 .addEntity(myBot)

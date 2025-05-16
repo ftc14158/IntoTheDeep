@@ -14,6 +14,11 @@ public class WristConstants {
     public static double WRIST_POS0 = 43.0;
     public static double WRIST_POS1 = 0;
     public static double WRIST_POS2 = 60.0;
+    public static double WRIST_POS3 = 70.0;
+    public static double WRIST_MIN = -30;
+    public static double WRIST_MAX = 75;
+    public static double NUDGE_DEGREES = 5;
+
     public static double WRIST_KP = 0.02;
     public static double WRIST_KI = 0.1;
     public static double WRIST_KD = 0.0006;

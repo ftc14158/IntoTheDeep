@@ -2,6 +2,9 @@ package org.firstinspires.ftc.teamcode.subsystems.mechanism;
 
 import com.qualcomm.robotcore.hardware.AnalogInput;
 import com.qualcomm.robotcore.hardware.AnalogInputController;
+import com.qualcomm.robotcore.util.RobotLog;
+
+import org.firstinspires.ftc.teamcode.RobotContainer;
 
 /**
  * Wrapper  class for Rev Potentiometer that also:
@@ -34,7 +37,10 @@ public class RevPotentiometer {
     }
 
     private double getVolts() {
-        if (volts < 0) update();
+        if (volts < 0) {
+         //   RobotLog.i("POT force update to get volts");
+            update();
+        }
         return volts;
     }
 
@@ -45,16 +51,20 @@ public class RevPotentiometer {
     public double update() {
         lastTimeStamp = timestamp;
         lastRadians = voltageToRawRadians(volts);
+        double lastVolts = volts;
 
         volts = pot.getVoltage();
 
         timestamp = (double) System.nanoTime() / 1E9;
 
         // Calculate the angular velocity in radians if we have a previous reading
-        if (lastTimeStamp > 0.1) { // Tolerate floating pt error on 0
+
+        if (lastTimeStamp > 0.05) { // Tolerate floating pt error on 0
             double period = timestamp - lastTimeStamp;
             velRadians = (voltageToRawRadians(volts) - lastRadians) / period;
+        //    RobotLog.i("POT: Period=%f, vDelta=%f, velRads=%f, velDeg=%f", period, volts - lastVolts, velRadians, Math.toDegrees(velRadians));
         } else {
+        //    RobotLog.i("NO TIMESTAMP - %f, %f", lastTimeStamp, timestamp);
             velRadians = 0;
         }
 

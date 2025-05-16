@@ -4,6 +4,7 @@ import com.arcrobotics.ftclib.command.CommandOpMode;
 import com.arcrobotics.ftclib.command.InstantCommand;
 import com.arcrobotics.ftclib.gamepad.GamepadEx;
 import com.arcrobotics.ftclib.gamepad.GamepadKeys;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.teamcode.commands.RunCommand;
@@ -11,6 +12,7 @@ import org.firstinspires.ftc.teamcode.subsystems.SlideConstants;
 import org.firstinspires.ftc.teamcode.subsystems.mechanism.SlideController;
 
 @TeleOp(group="test", name = "Test Slide")
+@Disabled
 public class TestSlideController extends CommandOpMode  {
     private SlideController slideController;
 
